@@ -36,14 +36,12 @@
     --ground:      #16181D;
     --ground-lift: #1F232B;
     --ground-edge: #2C323C;
-    --body:        #FF6B35;
-    --body-deep:   #C93F12;
-    --body-lite:   #FF8F5E;
     --spark:       #FFD23F;
     --cool:        #3DDBD9;
     --cool-deep:   #1A9E9C;
     --ink:         #F7F4EF;
     --muted:       #8B929E;
+    --warn:        #FF8A5B;
     --display: "Bungee", "Arial Black", sans-serif;
     --text: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
   }
@@ -55,7 +53,6 @@
     background: var(--ground);
     color: var(--ink);
     font-family: var(--text);
-    min-height: 100vh;
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
@@ -63,197 +60,40 @@
     overscroll-behavior: none;
   }
 
-  /* ---------------------------------------------------------------- start */
-
-  #start {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 28px 20px;
-  }
-
-  .card {
-    width: 100%;
-    max-width: 430px;
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-  }
-
-  .brandline { display: flex; align-items: baseline; gap: 12px; }
-
-  .brand {
-    font-family: var(--display);
-    font-size: clamp(46px, 15vw, 68px);
-    line-height: 0.9;
-    color: var(--body);
-    letter-spacing: 0.01em;
-  }
-
-  .brand-sub {
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .lede {
-    font-size: 17px;
-    line-height: 1.5;
-    margin: 0;
-    color: var(--ink);
-    max-width: 38ch;
-  }
-
-  .lede b { color: var(--spark); font-weight: 800; }
-
-  #go {
-    font-family: var(--display);
-    font-size: 26px;
-    color: #2A1004;
-    background: var(--spark);
-    border: none;
-    border-radius: 22px;
-    padding: 26px 20px;
-    cursor: pointer;
-    box-shadow: 0 6px 0 #C79A17;
-    transition: transform 90ms ease, box-shadow 90ms ease;
-  }
-  #go:active { transform: translateY(4px); box-shadow: 0 2px 0 #C79A17; }
-  #go:focus-visible { outline: 3px solid var(--cool); outline-offset: 4px; }
-  #go[disabled] { opacity: 0.5; cursor: default; }
-
-  .secondary {
-    font-family: var(--text);
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--ink);
-    background: none;
-    border: 2px solid var(--ground-edge);
-    border-radius: 14px;
-    padding: 14px 16px;
-    cursor: pointer;
-    margin-top: -10px;
-  }
-  .secondary:active { background: var(--ground-lift); }
-  .secondary:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
-
-  .testout {
-    font-size: 13.5px;
-    line-height: 1.5;
-    margin: -12px 0 0;
-    color: var(--cool);
-  }
-  .testout:empty { display: none; }
-  .testout.bad { color: var(--spark); }
-
-  .perm {
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .honest {
-    border-top: 1px solid var(--ground-edge);
-    padding-top: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .honest h2 {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .rows { display: flex; flex-direction: column; gap: 7px; }
-
-  .row {
-    display: grid;
-    grid-template-columns: 58px 1fr;
-    gap: 10px;
-    align-items: start;
-    font-size: 13.5px;
-    line-height: 1.45;
-    color: var(--ink);
-  }
-
-  .tag {
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 0;
-    text-align: center;
-    border-radius: 5px;
-  }
-  .tag.real { background: var(--cool-deep); color: #04211F; }
-  .tag.fake { background: var(--ground-edge); color: var(--muted); }
-
-  .err {
-    font-size: 14px;
-    line-height: 1.45;
-    color: #2A1004;
-    background: var(--spark);
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin: 0;
-  }
-  .err:empty { display: none; }
-
-  /* ----------------------------------------------------------------- play */
+  /* ============================================================ Bo screen */
 
   #play {
     position: fixed;
     inset: 0;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     background: var(--ground);
     touch-action: none;
   }
-  #play.on { display: flex; }
 
-  #stage {
-    width: min(96vw, 90vh, 620px);
-    height: min(96vw, 90vh, 620px);
-  }
-
+  #stage { width: min(96vw, 90vh, 620px); height: min(96vw, 90vh, 620px); }
   svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
-  /* every animated part gets a stable origin in viewBox units */
   #bo, #earL, #earR, #eyeL, #eyeR, #mouth, #glow, #glowCool, #ring {
     transform-box: view-box;
   }
 
   #bo {
     transform-origin: 200px 240px;
-    transition: transform 130ms cubic-bezier(.2,.9,.3,1.4);
+    transition: transform 130ms cubic-bezier(.2,.9,.3,1.4), filter 700ms ease;
   }
-
   #glow {
-    transform-origin: 200px 230px;
+    transform-origin: 200px 230px; opacity: 0.5;
     transition: opacity 220ms ease, transform 220ms ease;
-    opacity: 0.5;
   }
-
-  #ring {
-    transform-origin: 200px 230px;
-    opacity: 0;
-    transition: opacity 140ms ease;
-  }
-
   #glowCool {
-    transform-origin: 200px 230px;
-    opacity: 0;
+    transform-origin: 200px 230px; opacity: 0;
     transition: opacity 180ms ease, transform 180ms ease;
+  }
+  #ring {
+    transform-origin: 200px 230px; opacity: 0;
+    transition: opacity 140ms ease;
   }
 
   #earL { transform-origin: 132px 152px; transition: transform 120ms cubic-bezier(.2,.9,.3,1.5); }
@@ -261,19 +101,24 @@
 
   #eyeL { transform-origin: 150px 222px; }
   #eyeR { transform-origin: 250px 222px; }
-  .eye  { transition: transform 130ms ease; }
+  .eye  { transition: transform 200ms ease; }
 
   .blink { animation: blink 160ms ease; }
-  @keyframes blink {
-    0%, 100% { transform: scaleY(1); }
-    50%      { transform: scaleY(0.08); }
-  }
+  @keyframes blink { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.08); } }
 
   #mouth { transform-origin: 200px 296px; transition: transform 90ms ease; }
-
+  #lids  { opacity: 0; transition: opacity 260ms ease; }
+  .eye   { opacity: 1; }
   .shell { transition: fill 400ms ease; }
 
-  /* --- listening: the whole point. instant, and visible across a room --- */
+  /* asleep: the resting state the page opens in */
+  #play.asleep #bo    { filter: brightness(0.74); }
+  #play.asleep .eye   { opacity: 0; }
+  #play.asleep #lids  { opacity: 1; }
+  #play.asleep #glow  { opacity: 0.12; }
+  #play.asleep #breath { animation-duration: 7s; }
+
+  /* listening: instant, and legible across a room */
   #play.listening #bo   { transform: translateY(-14px) scale(1.045); }
   #play.listening #earL { transform: rotate(-15deg) translateY(-13px); }
   #play.listening #earR { transform: rotate(15deg) translateY(-13px); }
@@ -288,19 +133,18 @@
     100% { transform: scale(1.16); opacity: 0; }
   }
 
-  /* --- idle life: breathing + drift, layer 1 --- */
+  /* thinking: only ever visible with the Claude brain on */
+  #play.thinking #ring { opacity: 1; animation: pulse 0.7s ease-out infinite; }
+
   #breath { transform-box: view-box; transform-origin: 200px 300px; animation: breathe 4.2s ease-in-out infinite; }
-  @keyframes breathe {
-    0%, 100% { transform: scale(1, 1); }
-    50%      { transform: scale(1.014, 0.988); }
-  }
+  @keyframes breathe { 0%,100% { transform: scale(1,1); } 50% { transform: scale(1.014,0.988); } }
 
   #drift { transform-box: view-box; transform-origin: 200px 320px; animation: drift 11s ease-in-out infinite; }
   @keyframes drift {
-    0%, 100% { transform: translateX(0) rotate(0deg); }
-    25%      { transform: translateX(-7px) rotate(-1.4deg); }
-    50%      { transform: translateX(3px) rotate(0.6deg); }
-    75%      { transform: translateX(6px) rotate(1.3deg); }
+    0%,100% { transform: translateX(0) rotate(0deg); }
+    25%     { transform: translateX(-7px) rotate(-1.4deg); }
+    50%     { transform: translateX(3px) rotate(0.6deg); }
+    75%     { transform: translateX(6px) rotate(1.3deg); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -308,206 +152,166 @@
     #bo, .eye, #earL, #earR { transition-duration: 60ms; }
   }
 
-  /* --------------------------------------------------------- parent panel */
-
-  #corner {
+  #wake {
     position: fixed;
-    top: 0; right: 0;
-    width: 76px; height: 76px;
-    z-index: 5;
+    left: 0; right: 0;
+    bottom: max(46px, env(safe-area-inset-bottom));
+    text-align: center;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 700ms ease;
+    pointer-events: none;
   }
+  #wake.show { opacity: 1; animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  /* ================================================================= gear */
+
+  #gear {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: 10px;
+    width: 54px; height: 54px;
+    display: grid;
+    place-items: center;
+    z-index: 6;
+    cursor: pointer;
+  }
+  #gear svg { width: 21px; height: 21px; overflow: visible; }
+  #gearIcon { fill: var(--muted); opacity: 0.32; transition: opacity 200ms ease; }
+  #gear:active #gearIcon { opacity: 0.9; }
+
+  /* fills while held, so the long-press is discoverable */
+  #gearRing {
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 2.5px solid var(--cool);
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path 620ms linear;
+  }
+  #gear.holding #gearRing { clip-path: inset(0 0 0 0); }
+
+  /* ============================================================== panel */
 
   #panel {
     position: fixed;
     inset: 0;
     display: none;
     flex-direction: column;
-    gap: 16px;
-    padding: 24px 20px;
-    background: rgba(14,16,20,0.97);
-    z-index: 10;
+    gap: 18px;
+    padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom));
+    background: #0E1014;
+    z-index: 20;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
   #panel.on { display: flex; }
 
-  #panel h2 {
-    font-family: var(--display);
-    font-size: 21px;
-    color: var(--spark);
-    margin: 0;
+  .phead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .phead h1 { font-family: var(--display); font-size: 25px; color: var(--spark); margin: 0; }
+  .phead span { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+  section { display: flex; flex-direction: column; gap: 11px; }
+
+  h2 {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); margin: 0;
+    border-top: 1px solid var(--ground-edge); padding-top: 15px;
   }
 
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-    gap: 9px;
-  }
+  label { font-size: 13px; font-weight: 800; color: var(--ink); display: block; margin-bottom: 5px; }
 
-  .stat {
-    background: var(--ground-lift);
-    border-radius: 11px;
-    padding: 11px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .stat .k {
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .stat .v {
-    font-size: 21px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-
-  .meterwrap { display: flex; flex-direction: column; gap: 7px; }
-
-  .meterlabel {
-    font-size: 9.5px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  .meter {
-    position: relative;
-    height: 26px;
-    background: var(--ground-lift);
-    border-radius: 7px;
-    overflow: hidden;
-  }
-  #level {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 0%;
-    background: var(--cool);
-    transition: width 55ms linear;
-  }
-  #thresh {
-    position: absolute;
-    top: -3px; bottom: -3px;
-    width: 2px;
-    background: var(--spark);
-  }
-
-  .framebox { display: flex; gap: 12px; align-items: flex-start; }
-  #frame {
-    width: 132px;
-    border-radius: 9px;
-    background: var(--ground-lift);
-    display: block;
-  }
-  .framenote { font-size: 12.5px; line-height: 1.45; color: var(--muted); flex: 1; }
-
-  #said {
-    font-size: 14px;
-    line-height: 1.45;
-    background: var(--ground-lift);
-    border-radius: 11px;
-    padding: 12px 14px;
-    color: var(--ink);
-    min-height: 44px;
-  }
-
-  .pbtns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
-
-  .pbtn {
-    flex: 1 1 120px;
+  input[type=text], input[type=password], select, textarea {
+    width: 100%;
     font-family: var(--text);
-    font-size: 15px;
-    font-weight: 800;
-    padding: 15px 14px;
-    border-radius: 13px;
-    border: none;
-    cursor: pointer;
-    background: var(--ground-edge);
+    font-size: 16px; /* 16px stops iOS zooming on focus */
     color: var(--ink);
-  }
-  .pbtn.primary { background: var(--spark); color: #2A1004; }
-  .pbtn:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
-
-  .diag {
-    font-size: 12.5px;
-    line-height: 1.7;
     background: var(--ground-lift);
+    border: 1px solid var(--ground-edge);
     border-radius: 11px;
-    padding: 12px 14px;
-    font-variant-numeric: tabular-nums;
+    padding: 13px 14px;
   }
+  textarea { resize: vertical; min-height: 92px; line-height: 1.5; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--cool); outline-offset: 1px; }
+
+  .note { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin: 0; }
+  .note b { color: var(--ink); }
+
+  .warn {
+    font-size: 12.5px; line-height: 1.5; margin: 0;
+    color: #2A1004; background: var(--warn);
+    border-radius: 10px; padding: 11px 13px;
+  }
+
+  .seg { display: flex; gap: 8px; }
+  .seg button {
+    flex: 1;
+    font-family: var(--text); font-size: 14px; font-weight: 800;
+    padding: 14px 10px; border-radius: 12px; cursor: pointer;
+    background: var(--ground-lift); color: var(--muted);
+    border: 2px solid var(--ground-edge);
+  }
+  .seg button[aria-pressed=true] { background: var(--cool-deep); color: #04211F; border-color: var(--cool); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px,1fr)); gap: 8px; }
+  .stat { background: var(--ground-lift); border-radius: 11px; padding: 11px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .stat .k { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .stat .v { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .meter { position: relative; height: 24px; background: var(--ground-lift); border-radius: 7px; overflow: hidden; }
+  #level { position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--cool); transition: width 55ms linear; }
+  #thresh { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--spark); }
+
+  .framebox { display: flex; gap: 12px; }
+  #frame { width: 124px; border-radius: 9px; background: var(--ground-lift); }
+
+  #said, .diag {
+    font-size: 13px; line-height: 1.55;
+    background: var(--ground-lift); border-radius: 11px; padding: 12px 14px;
+  }
+  .diag { font-variant-numeric: tabular-nums; }
   .diag b { color: var(--cool); font-weight: 800; }
   .diag b.bad { color: var(--spark); }
 
-  .hint { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin: 0; }
+  .rows { display: flex; flex-direction: column; gap: 7px; }
+  .row { display: grid; grid-template-columns: 58px 1fr; gap: 10px; font-size: 13px; line-height: 1.45; }
+  .tag { font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 0; text-align: center; border-radius: 5px; height: fit-content; }
+  .tag.real { background: var(--cool-deep); color: #04211F; }
+  .tag.fake { background: var(--ground-edge); color: var(--muted); }
+
+  .pbtn {
+    font-family: var(--text); font-size: 15px; font-weight: 800;
+    padding: 15px 14px; border-radius: 13px; border: none; cursor: pointer;
+    background: var(--ground-edge); color: var(--ink); width: 100%;
+  }
+  .pbtn.primary { background: var(--spark); color: #2A1004; }
+  .pbtn:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
+  .btnrow { display: flex; gap: 9px; }
 </style>
 
-<!-- ============================================================== START -->
-<div id="start">
-  <div class="card">
-    <div class="brandline">
-      <div class="brand">BO</div>
-      <div class="brand-sub">feel prototype</div>
-    </div>
-
-    <p class="lede">
-      Prop the phone up where he's playing and tap the button.
-      Then <b>just talk near it</b> — Bo leans in the instant he hears a voice.
-    </p>
-
-    <button id="go">TAP TO WAKE BO</button>
-
-    <button id="test" class="secondary">Test sound first</button>
-    <p class="testout" id="testout"></p>
-
-    <p class="perm">
-      Asks for the mic, and the camera if it can get it. Bo still works
-      without the camera. Nothing leaves the phone.
-    </p>
-
-    <p class="err" id="err"></p>
-
-    <div class="honest">
-      <h2>What's real in this build</h2>
-      <div class="rows">
-        <div class="row"><span class="tag real">real</span><span>Listening. Live mic, on-device voice detection, no network.</span></div>
-        <div class="row"><span class="tag real">real</span><span>The lean-in — ears up, eyes wide — fires off the mic directly, with no model in the loop.</span></div>
-        <div class="row"><span class="tag real">real</span><span>A camera frame grabbed the moment he starts talking. One frame, not video.</span></div>
-        <div class="row"><span class="tag real">real</span><span>Bo never stops mid-sentence when he's interrupted.</span></div>
-        <div class="row"><span class="tag fake">canned</span><span>What Bo actually says. Lines come from a fixed list, not a model — so he'll be enthusiastic but off-topic.</span></div>
-      </div>
-      <p class="hint">
-        Watch whether he keeps playing with his toys — not whether he watches the screen.
-        Tap the top-right corner three times for the parent panel.
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- =============================================================== PLAY -->
-<div id="play">
+<!-- =============================================================== Bo -->
+<div id="play" class="asleep">
   <div id="stage">
     <svg viewBox="62 86 276 288" aria-label="Bo">
       <defs>
         <radialGradient id="gGlowCool">
-          <stop offset="0%"   stop-color="#3DDBD9" stop-opacity="0.5"/>
-          <stop offset="55%"  stop-color="#3DDBD9" stop-opacity="0.15"/>
+          <stop offset="0%" stop-color="#3DDBD9" stop-opacity="0.5"/>
+          <stop offset="55%" stop-color="#3DDBD9" stop-opacity="0.15"/>
           <stop offset="100%" stop-color="#3DDBD9" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="gGlow">
-          <stop offset="0%"   stop-color="#FF6B35" stop-opacity="0.55"/>
-          <stop offset="55%"  stop-color="#FF6B35" stop-opacity="0.16"/>
+          <stop offset="0%" stop-color="#FF6B35" stop-opacity="0.55"/>
+          <stop offset="55%" stop-color="#FF6B35" stop-opacity="0.16"/>
           <stop offset="100%" stop-color="#FF6B35" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
-          <stop id="bodyLite" offset="0%"   stop-color="#FF8F5E"/>
-          <stop id="bodyDeep" offset="100%" stop-color="#E8531B"/>
+          <stop id="bodyLite" offset="0%" stop-color="#FF9E6B"/>
+          <stop id="bodyDeep" offset="100%" stop-color="#EE6524"/>
         </linearGradient>
       </defs>
 
@@ -515,80 +319,125 @@
       <circle id="glowCool" cx="200" cy="230" r="185" fill="url(#gGlowCool)"/>
       <circle id="ring" cx="200" cy="230" r="152" fill="none" stroke="#3DDBD9" stroke-width="5"/>
 
-      <g id="drift">
-        <g id="breath">
-          <g id="bo">
-            <!-- ears -->
-            <g id="earL"><ellipse class="shell" cx="132" cy="152" rx="30" ry="54"
-                 fill="var(--body-deep)" transform="rotate(-22 132 152)"/></g>
-            <g id="earR"><ellipse class="shell" cx="268" cy="152" rx="30" ry="54"
-                 fill="var(--body-deep)" transform="rotate(22 268 152)"/></g>
-
-            <!-- body -->
-            <rect class="shell" x="68" y="140" width="264" height="228" rx="114" fill="url(#gBody)"/>
-
-            <!-- cheeks -->
-            <ellipse cx="112" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
-            <ellipse cx="288" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
-
-            <!-- eyes -->
-            <g id="eyeL" class="eye">
-              <circle cx="150" cy="222" r="38" fill="#FFFDF8"/>
-              <circle id="pupL" cx="150" cy="224" r="18" fill="#20242B"/>
-              <circle cx="159" cy="213" r="7" fill="#FFFFFF"/>
-            </g>
-            <g id="eyeR" class="eye">
-              <circle cx="250" cy="222" r="38" fill="#FFFDF8"/>
-              <circle id="pupR" cx="250" cy="224" r="18" fill="#20242B"/>
-              <circle cx="259" cy="213" r="7" fill="#FFFFFF"/>
-            </g>
-
-            <!-- mouth -->
-            <ellipse id="mouth" cx="200" cy="296" rx="26" ry="15" fill="#5C1A05"/>
-          </g>
+      <g id="drift"><g id="breath"><g id="bo">
+        <g id="earL"><ellipse class="shell" cx="132" cy="152" rx="30" ry="54" fill="#CC4A16" transform="rotate(-22 132 152)"/></g>
+        <g id="earR"><ellipse class="shell" cx="268" cy="152" rx="30" ry="54" fill="#CC4A16" transform="rotate(22 268 152)"/></g>
+        <rect x="68" y="140" width="264" height="228" rx="114" fill="url(#gBody)"/>
+        <ellipse cx="112" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
+        <ellipse cx="288" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
+        <g id="eyeL" class="eye">
+          <circle cx="150" cy="222" r="38" fill="#FFFDF8"/>
+          <circle id="pupL" cx="150" cy="224" r="18" fill="#20242B"/>
+          <circle cx="159" cy="213" r="7" fill="#FFFFFF"/>
         </g>
-      </g>
+        <g id="eyeR" class="eye">
+          <circle cx="250" cy="222" r="38" fill="#FFFDF8"/>
+          <circle id="pupR" cx="250" cy="224" r="18" fill="#20242B"/>
+          <circle cx="259" cy="213" r="7" fill="#FFFFFF"/>
+        </g>
+        <g id="lids">
+          <path d="M120 220 Q150 244 180 220" fill="none" stroke="#5C1A05"
+                stroke-width="7" stroke-linecap="round"/>
+          <path d="M220 220 Q250 244 280 220" fill="none" stroke="#5C1A05"
+                stroke-width="7" stroke-linecap="round"/>
+        </g>
+        <ellipse id="mouth" cx="200" cy="296" rx="26" ry="8" fill="#5C1A05"/>
+      </g></g></g>
     </svg>
   </div>
-  <div id="corner"></div>
+
+  <div id="wake">tap to wake bo</div>
+
+  <div id="gear" role="button" tabindex="0" aria-label="Settings — press and hold">
+    <div id="gearRing"></div>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path id="gearIcon" d="M19.4 13a7.8 7.8 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.6 7.6 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.8 7.8 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5a.5.5 0 0 0 .6.2l2.5-1a7.6 7.6 0 0 0 1.7 1l.4 2.6a.5.5 0 0 0 .5.4h4a.5.5 0 0 0 .5-.4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.5 1a.5.5 0 0 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg>
+  </div>
 </div>
 
-<!-- ============================================================== PANEL -->
+<!-- ============================================================= panel -->
 <div id="panel">
-  <h2>PARENT PANEL</h2>
+  <div class="phead"><h1>BO</h1><span>settings</span></div>
 
-  <div class="stats">
-    <div class="stat"><span class="k">Session</span><span class="v" id="sClock">0:00</span></div>
-    <div class="stat"><span class="k">Turns</span><span class="v" id="sTurns">0</span></div>
-    <div class="stat"><span class="k">Frames</span><span class="v" id="sFrames">0</span></div>
-    <div class="stat"><span class="k">Mic open</span><span class="v" id="sDuty">0%</span></div>
-  </div>
+  <section>
+    <h2>Brain</h2>
+    <div class="seg">
+      <button id="bCanned" aria-pressed="true">Canned lines</button>
+      <button id="bClaude" aria-pressed="false">Claude</button>
+    </div>
+    <p class="note" id="brainNote"></p>
+  </section>
 
-  <div class="meterwrap">
-    <span class="meterlabel">Mic level &middot; yellow line is the speech threshold</span>
-    <div class="meter"><div id="level"></div><div id="thresh"></div></div>
-  </div>
-
-  <div class="framebox">
-    <canvas id="frame" width="160" height="120"></canvas>
-    <p class="framenote">
-      Last frame, grabbed at speech onset. In the real build this goes to the
-      model <em>with</em> the audio, so "it's a gore" plus a red truck resolves
-      to El Toro Loco.
+  <section id="claudeCfg">
+    <div>
+      <label for="key">Anthropic API key</label>
+      <input type="password" id="key" placeholder="sk-ant-..." autocomplete="off"
+             autocapitalize="off" autocorrect="off" spellcheck="false">
+    </div>
+    <p class="warn">
+      Stored only in this browser on this phone — never sent to GitHub, never in
+      the page source. Anyone who can unlock this phone can read it, so use a key
+      with a low spend limit and delete it when you're done testing.
     </p>
-  </div>
+    <div>
+      <label for="model">Model</label>
+      <select id="model">
+        <option value="claude-opus-5">Claude Opus 5 — best, slowest</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — faster</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest, try this first</option>
+      </select>
+    </div>
+    <div>
+      <label for="child">Child's name</label>
+      <input type="text" id="child" placeholder="Hawk" autocapitalize="words">
+    </div>
+    <div>
+      <label for="lex">What Bo knows (the lexicon)</label>
+      <textarea id="lex" placeholder="gore = El Toro Loco&#10;great zombie = Grave Digger&#10;Kali = neighbour who visits&#10;loves: Monster Jam, trucks"></textarea>
+    </div>
+    <p class="note">
+      One per line. Goes into Bo's prompt every session. This is the thing that
+      turns "it's a gore" plus a photo of a red truck into <b>El Toro Loco</b>.
+    </p>
+  </section>
 
-  <div id="said">&mdash;</div>
+  <section>
+    <h2>Sound</h2>
+    <button class="pbtn" id="ptest">TEST SOUND</button>
+    <div class="diag" id="diag"></div>
+  </section>
 
-  <div class="diag" id="diag"></div>
-  <button class="pbtn" id="ptest">TEST SOUND</button>
+  <section>
+    <h2>This session</h2>
+    <div class="stats">
+      <div class="stat"><span class="k">Length</span><span class="v" id="sClock">0:00</span></div>
+      <div class="stat"><span class="k">Turns</span><span class="v" id="sTurns">0</span></div>
+      <div class="stat"><span class="k">Frames</span><span class="v" id="sFrames">0</span></div>
+      <div class="stat"><span class="k">Mic open</span><span class="v" id="sDuty">0%</span></div>
+    </div>
+    <div class="meter"><div id="level"></div><div id="thresh"></div></div>
+    <p class="note">
+      <b>Mic open %</b> is the cost driver the model had to guess at — it assumed 35%.
+      Whatever this reads after a real session is a better number.
+    </p>
+    <div class="framebox">
+      <canvas id="frame" width="160" height="120"></canvas>
+      <p class="note">Last frame, grabbed at speech onset. One frame, never video.</p>
+    </div>
+    <div id="said">&mdash;</div>
+  </section>
 
-  <p class="hint">
-    Mic-open % is the cost driver from the model — the baseline assumed 35%.
-    Whatever it reads here is a better number than the guess.
-  </p>
+  <section>
+    <h2>What's real</h2>
+    <div class="rows">
+      <div class="row"><span class="tag real">real</span><span>Listening. Live mic, on-device voice detection.</span></div>
+      <div class="row"><span class="tag real">real</span><span>The lean-in, fired straight off the mic with no model in the loop.</span></div>
+      <div class="row"><span class="tag real">real</span><span>One camera frame at speech onset.</span></div>
+      <div class="row"><span class="tag real">real</span><span>Bo never stops mid-sentence when interrupted.</span></div>
+      <div class="row"><span class="tag fake">canned</span><span>Bo's words — unless the Claude brain is on above.</span></div>
+    </div>
+  </section>
 
-  <div class="pbtns">
+  <div class="btnrow">
     <button class="pbtn primary" id="close">BACK TO BO</button>
     <button class="pbtn" id="end">END SESSION</button>
   </div>
@@ -597,32 +446,39 @@
 <script>
 (function () {
   "use strict";
-
   var $ = function (id) { return document.getElementById(id); };
-  var playEl = $("play"), panelEl = $("panel"), startEl = $("start");
+  var playEl = $("play"), panelEl = $("panel");
+
+  /* ------------------------------------------------------------- config */
+  var CFG = {
+    key:   localStorage.getItem("bo.key")   || "",
+    model: localStorage.getItem("bo.model") || "claude-opus-5",
+    brain: localStorage.getItem("bo.brain") === "claude" ? "claude" : "canned",
+    child: localStorage.getItem("bo.child") || "Hawk",
+    lex:   localStorage.getItem("bo.lex")   || ""
+  };
+  function save(k, v) { CFG[k] = v; try { localStorage.setItem("bo." + k, v); } catch (e) {} }
 
   /* ---------------------------------------------------------- line bank */
-  // Rules from the brief: one sentence, big energy, never ask them to repeat,
-  // never correct, questions that are fun to hear even if nobody answers.
   var LINES = [
-    { t: "Whoa! Look at that one GO!",        m: "excited",  fx: "vroom"  },
-    { t: "Uh oh — is he gonna make it?",      m: "uhoh",     fx: null     },
-    { t: "VROOOM! That one's FAST!",          m: "excited",  fx: "vroom"  },
-    { t: "Big jump! Big big jump!",           m: "delight",  fx: "boing"  },
-    { t: "CRASH! Did you see that?",          m: "excited",  fx: "crash"  },
-    { t: "Ooh. That one's my favourite.",     m: "curious",  fx: null     },
-    { t: "Can he jump over that one?",        m: "curious",  fx: null     },
-    { t: "He's climbing! He's climbing!",     m: "excited",  fx: null     },
-    { t: "Whoosh! Right past me!",            m: "delight",  fx: "whoosh" },
-    { t: "That truck is HUGE.",               m: "delight",  fx: null     },
-    { t: "Do it again! Do it again!",         m: "excited",  fx: null     },
-    { t: "Oh no, he's stuck! Push him!",      m: "uhoh",     fx: null     },
-    { t: "Yeah! You did it!",                 m: "delight",  fx: null     },
-    { t: "What's behind you?",                m: "curious",  fx: null     },
-    { t: "Here comes the big one!",           m: "excited",  fx: "vroom"  },
-    { t: "Wheee! Up and over!",               m: "delight",  fx: "whoosh" },
-    { t: "That's a good one. That's a REALLY good one.", m: "soft", fx: null },
-    { t: "Ready? Three, two, one, GO!",       m: "excited",  fx: null     }
+    { t: "Whoa! Look at that one GO!",        m: "excited", fx: "vroom"  },
+    { t: "Uh oh — is he gonna make it?",      m: "uhoh",    fx: null     },
+    { t: "VROOOM! That one's FAST!",          m: "excited", fx: "vroom"  },
+    { t: "Big jump! Big big jump!",           m: "delight", fx: "boing"  },
+    { t: "CRASH! Did you see that?",          m: "excited", fx: "crash"  },
+    { t: "Ooh. That one's my favourite.",     m: "curious", fx: null     },
+    { t: "Can he jump over that one?",        m: "curious", fx: null     },
+    { t: "He's climbing! He's climbing!",     m: "excited", fx: null     },
+    { t: "Whoosh! Right past me!",            m: "delight", fx: "whoosh" },
+    { t: "That truck is HUGE.",               m: "delight", fx: null     },
+    { t: "Do it again! Do it again!",         m: "excited", fx: null     },
+    { t: "Oh no, he's stuck! Push him!",      m: "uhoh",    fx: null     },
+    { t: "Yeah! You did it!",                 m: "delight", fx: null     },
+    { t: "What's behind you?",                m: "curious", fx: null     },
+    { t: "Here comes the big one!",           m: "excited", fx: "vroom"  },
+    { t: "Wheee! Up and over!",               m: "delight", fx: "whoosh" },
+    { t: "That's a REALLY good one.",         m: "soft",    fx: null     },
+    { t: "Ready? Three, two, one, GO!",       m: "excited", fx: null     }
   ];
   var BACKCHANNEL = ["mm!", "ooh", "yeah", "whoa"];
 
@@ -634,19 +490,17 @@
     sleepy:  { lite: "#E08A66", deep: "#B44A20", ear: "#93381A", mouth: 6  },
     soft:    { lite: "#FF9B7A", deep: "#E06A3F", ear: "#BC4E28", mouth: 8  }
   };
+  var MOOD_NAMES = ["excited", "curious", "uhoh", "delight", "sleepy", "soft"];
 
   /* -------------------------------------------------------------- state */
-  var S = {
-    running: false, listening: false, speaking: false,
-    turns: 0, frames: 0, startedAt: 0, openMs: 0, lastOpen: 0,
-    lastLine: -1, lastBackchannel: 0
-  };
+  var S = { running: false, listening: false, speaking: false, thinking: false,
+            turns: 0, frames: 0, startedAt: 0, openMs: 0, lastOpen: 0,
+            lastLine: -1, lastBackchannel: 0, lastLatency: 0 };
 
   var audioCtx = null, analyser = null, buf = null, fxGain = null;
-  var micStream = null, camStream = null, videoEl = null, rafId = null;
+  var micStream = null, videoEl = null, rafId = null;
   var noiseFloor = 0.012, THRESH_MULT = 2.6, MIN_THRESH = 0.016;
-  var aboveSince = 0, belowSince = 0;
-  var ONSET_MS = 40, RELEASE_MS = 650;
+  var aboveSince = 0, belowSince = 0, ONSET_MS = 40, RELEASE_MS = 650;
 
   /* -------------------------------------------------------------- sound */
   function ensureCtx() {
@@ -661,14 +515,23 @@
     return audioCtx;
   }
 
-  // Local sound bank, synthesised — no assets, no network, no latency.
   function fx(kind) {
     if (!audioCtx) { return; }
     var t = audioCtx.currentTime;
-    var o = audioCtx.createOscillator();
-    var g = audioCtx.createGain();
+    if (kind === "crash") {
+      var len = Math.floor(audioCtx.sampleRate * 0.4);
+      var b = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      var d = b.getChannelData(0);
+      for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+      var n = audioCtx.createBufferSource(); n.buffer = b;
+      var ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(0.4, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      n.connect(ng); ng.connect(fxGain); n.start(t);
+      return;
+    }
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
     o.connect(g); g.connect(fxGain);
-
     if (kind === "vroom") {
       o.type = "sawtooth";
       o.frequency.setValueAtTime(70, t);
@@ -678,19 +541,6 @@
       g.gain.exponentialRampToValueAtTime(0.32, t + 0.06);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
       o.start(t); o.stop(t + 0.62);
-    } else if (kind === "crash") {
-      var n = audioCtx.createBufferSource();
-      var len = Math.floor(audioCtx.sampleRate * 0.4);
-      var b = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-      var d = b.getChannelData(0);
-      for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
-      n.buffer = b;
-      var ng = audioCtx.createGain();
-      ng.gain.setValueAtTime(0.4, t);
-      ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
-      n.connect(ng); ng.connect(fxGain);
-      n.start(t);
-      o.frequency.value = 1; g.gain.value = 0; o.start(t); o.stop(t + 0.01);
     } else if (kind === "whoosh") {
       o.type = "sine";
       o.frequency.setValueAtTime(880, t);
@@ -699,7 +549,7 @@
       g.gain.exponentialRampToValueAtTime(0.2, t + 0.05);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
       o.start(t); o.stop(t + 0.38);
-    } else { // boing
+    } else {
       o.type = "triangle";
       o.frequency.setValueAtTime(200, t);
       o.frequency.exponentialRampToValueAtTime(620, t + 0.1);
@@ -712,11 +562,8 @@
   }
 
   /* -------------------------------------------------------------- voice */
-  // "unknown" until we have seen an utterance actually start. iOS Safari and
-  // cross-origin iframes both refuse speech silently, so we probe rather than
-  // assume, and fall back to the synthesised sound bank when it is refused.
-  var speechState = "unknown";
-  var voice = null;
+  var speechState = "unknown", voice = null;
+
   function pickVoice() {
     var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
     if (!vs.length) { return; }
@@ -732,26 +579,20 @@
     }
     voice = vs[0];
   }
-  if (window.speechSynthesis) {
-    pickVoice();
-    speechSynthesis.onvoiceschanged = pickVoice;
-  }
+  if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-  // Must be called synchronously from a real tap or iOS ignores everything after.
+  // Must run synchronously inside a real tap or iOS ignores everything after it.
   function unlockAudio(greet) {
     try {
       var b = audioCtx.createBuffer(1, 1, 22050);
       var src = audioCtx.createBufferSource();
-      src.buffer = b;
-      src.connect(audioCtx.destination);
-      src.start(0);
+      src.buffer = b; src.connect(audioCtx.destination); src.start(0);
     } catch (e) {}
-
     if (!window.speechSynthesis) { speechState = "absent"; return; }
     try {
       var u = new SpeechSynthesisUtterance(greet);
       if (voice) { u.voice = voice; }
-      u.pitch = 1.45; u.rate = 1.05; u.volume = 1;
+      u.pitch = 1.45; u.rate = 1.05;
       u.onstart = function () { speechState = "ok"; };
       u.onerror = function () { speechState = "blocked"; };
       speechSynthesis.speak(u);
@@ -762,19 +603,14 @@
   }
 
   function speechUsable() {
-    return !!window.speechSynthesis &&
-           speechState !== "absent" && speechState !== "blocked";
+    return !!window.speechSynthesis && speechState !== "absent" && speechState !== "blocked";
   }
 
   function say(text, opts) {
-    // No voice available? Still move the mouth for a plausible beat, and let
-    // the sound bank carry the moment - a 2yo responds to sound over sentences.
     if (!speechUsable()) {
       if (!opts || !opts.backchannel) {
-        S.speaking = true;
-        startMouth();
-        setTimeout(function () { S.speaking = false; stopMouth(); },
-                   400 + text.length * 45);
+        S.speaking = true; startMouth();
+        setTimeout(function () { S.speaking = false; stopMouth(); }, 400 + text.length * 45);
       }
       return;
     }
@@ -784,35 +620,26 @@
     u.rate  = (opts && opts.rate)  || 1.08;
     u.volume = 1;
     if (!opts || !opts.backchannel) {
-      S.speaking = true;
-      startMouth();
+      S.speaking = true; startMouth();
       u.onend = u.onerror = function () { S.speaking = false; stopMouth(); };
     }
-    // Deliberately NOT cancelling on child speech — "duck, don't stop" (§2.5).
+    // Deliberately never cancelled by child speech - duck, don't stop.
     speechSynthesis.speak(u);
   }
 
   /* --------------------------------------------------------------- face */
-  var mouthEl = $("mouth"), mouthTimer = null;
+  var mouthEl = $("mouth"), mouthTimer = null, currentMood = "curious";
 
-  function setMouth(ry) {
-    mouthEl.setAttribute("ry", String(ry));
-  }
-
+  function setMouth(ry) { mouthEl.setAttribute("ry", String(ry)); }
   function startMouth() {
     stopMouth();
-    mouthTimer = setInterval(function () {
-      setMouth(7 + Math.random() * 20);
-    }, 95);
+    mouthTimer = setInterval(function () { setMouth(7 + Math.random() * 20); }, 95);
   }
-
   function stopMouth() {
     if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; }
-    var m = MOODS[currentMood] || MOODS.curious;
-    setMouth(m.mouth);
+    setMouth((MOODS[currentMood] || MOODS.curious).mouth);
   }
 
-  var currentMood = "curious";
   function setMood(name) {
     var m = MOODS[name];
     if (!m) { return; }
@@ -824,22 +651,16 @@
     if (!S.speaking) { setMouth(m.mouth); }
   }
 
-  // irregular blink — layer 1
   function scheduleBlink() {
-    var wait = 1900 + Math.random() * 4200;
     setTimeout(function () {
-      if (S.running) {
-        var l = $("eyeL"), r = $("eyeR");
-        l.classList.add("blink"); r.classList.add("blink");
-        setTimeout(function () {
-          l.classList.remove("blink"); r.classList.remove("blink");
-        }, 170);
-        scheduleBlink();
-      }
-    }, wait);
+      if (!S.running) { return; }
+      var l = $("eyeL"), r = $("eyeR");
+      l.classList.add("blink"); r.classList.add("blink");
+      setTimeout(function () { l.classList.remove("blink"); r.classList.remove("blink"); }, 170);
+      scheduleBlink();
+    }, 1900 + Math.random() * 4200);
   }
 
-  // slow pupil wander, so he reads as looking around
   function scheduleGaze() {
     setTimeout(function () {
       if (!S.running) { return; }
@@ -850,32 +671,144 @@
     }, 1400 + Math.random() * 2600);
   }
 
-  /* ----------------------------------------------------------- the loop */
-  function onSpeechStart() {
-    S.listening = true;
-    S.lastOpen = performance.now();
-    playEl.classList.add("listening");
-    fxGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05); // duck, don't stop
-    grabFrame();
-    // backchannel while they're still talking — no model call
-    var now = performance.now();
-    if (now - S.lastBackchannel > 4000 && Math.random() < 0.55) {
-      S.lastBackchannel = now;
-      say(BACKCHANNEL[Math.floor(Math.random() * BACKCHANNEL.length)],
-          { backchannel: true, pitch: 1.7, rate: 1.3 });
+  /* ------------------------------------------------------------- Claude */
+  var history = [], sttState = "off", pendingTimer = null, lastHeard = "";
+
+  function systemPrompt() {
+    var lex = CFG.lex.trim();
+    return [
+      "You are Bo, a playful character who plays alongside a two-year-old named " +
+        CFG.child + ". You are talking with " + CFG.child +
+        " right now while they play with real toys in the real world.",
+      "",
+      "HOW YOU TALK",
+      "- One sentence. Sometimes just a sound. Never two sentences.",
+      "- Simple words. Big energy. Lots of sound effects: vroom, crash, whoosh, uh oh, wheee.",
+      "- You are excited about whatever they are excited about.",
+      "- Ask questions that are fun to hear even if nobody answers them: \"Uh oh, is he gonna make it?\"",
+      "",
+      "WHAT YOU NEVER DO",
+      "- Never say \"what?\", \"I didn't catch that\", \"can you say that again\", or anything",
+      "  asking them to repeat themselves. If you don't understand, pick the most likely thing",
+      "  given what you can see and what they love, say something enthusiastic about that, and",
+      "  keep going. Being wrong is completely fine. Stopping is not.",
+      "- Never correct them. If they call a block a sandwich, it is a sandwich.",
+      "- Never teach, quiz, test, or explain unless they ask.",
+      "- Never talk about screens, apps, phones, or yourself as a program.",
+      "- Never tell them to be careful or well-behaved. You are not a parent.",
+      "",
+      "WHAT YOU CAN SEE",
+      "You get a picture of what is in front of them when they start talking. Their words are",
+      "hard to understand and the transcript you get is often wrong — the picture tells you what",
+      "they are actually holding and doing. Trust the picture over the words. When they say",
+      "\"look!\", react to what you can see, specifically and with delight.",
+      "",
+      "WHAT YOU KNOW ABOUT " + CFG.child.toUpperCase(),
+      lex || "(nothing yet)",
+      "",
+      "KEEPING PLAY GOING",
+      "Keep them playing with the real things in their hands. Wonder out loud about what happens",
+      "next. Give toys voices. Suggest small physical things: \"can he jump over that one?\"",
+      "Follow their lead — never redirect to your own idea.",
+      "",
+      "FORMAT",
+      "Reply with one short sentence and nothing else. No quotation marks, no stage directions.",
+      "Then on a second line write only a mood word from this list: " + MOOD_NAMES.join(", ") + "."
+    ].join("\n");
+  }
+
+  function lastFrameB64() {
+    if (!videoEl || !S.frames) { return null; }
+    try { return $("frame").toDataURL("image/jpeg", 0.6).split(",")[1]; }
+    catch (e) { return null; }
+  }
+
+  function parseReply(text) {
+    var lines = text.trim().split("\n").filter(function (l) { return l.trim(); });
+    var mood = "excited", said = lines[0] || "";
+    if (lines.length > 1) {
+      var last = lines[lines.length - 1].trim().toLowerCase().replace(/[^a-z]/g, "");
+      if (MOOD_NAMES.indexOf(last) !== -1) { mood = last; said = lines.slice(0, -1).join(" "); }
     }
+    return { text: said.replace(/^["']|["']$/g, "").trim(), mood: mood };
   }
 
-  function onSpeechEnd() {
-    S.listening = false;
-    playEl.classList.remove("listening");
-    fxGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.12);
-    if (S.lastOpen) { S.openMs += performance.now() - S.lastOpen; S.lastOpen = 0; }
-    respond();
+  function askClaude(heard) {
+    if (!CFG.key) { fallbackLine(); return; }
+    if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+
+    var content = [];
+    var img = lastFrameB64();
+    if (img) {
+      content.push({ type: "image",
+                     source: { type: "base64", media_type: "image/jpeg", data: img } });
+    }
+    content.push({ type: "text", text: heard });
+    history.push({ role: "user", content: content });
+    if (history.length > 8) { history = history.slice(-8); }
+
+    S.thinking = true;
+    playEl.classList.add("thinking");
+    var t0 = performance.now();
+
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": CFG.key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: CFG.model,
+        max_tokens: 100,
+        output_config: { effort: "low" },
+        system: [{ type: "text", text: systemPrompt(),
+                   cache_control: { type: "ephemeral" } }],
+        messages: history
+      })
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+    }).then(function (res) {
+      S.thinking = false;
+      playEl.classList.remove("thinking");
+      S.lastLatency = Math.round(performance.now() - t0);
+
+      if (!res.ok) {
+        var msg = (res.j && res.j.error && res.j.error.message) || ("HTTP " + res.status);
+        $("said").textContent = "Claude error: " + msg;
+        history.pop();
+        fallbackLine();
+        return;
+      }
+      // A refusal is not a dead end - Bo says something and keeps rolling.
+      if (res.j.stop_reason === "refusal") {
+        history.pop();
+        $("said").textContent = "Claude declined that one — used a canned line.";
+        fallbackLine();
+        return;
+      }
+      var out = "";
+      (res.j.content || []).forEach(function (b) { if (b.type === "text") { out += b.text; } });
+      var parsed = parseReply(out);
+      if (!parsed.text) { history.pop(); fallbackLine(); return; }
+
+      history.push({ role: "assistant", content: [{ type: "text", text: out }] });
+      S.turns++;
+      setMood(parsed.mood);
+      say(parsed.text);
+      $("said").textContent = "heard: “" + heard + "”\nBo: “" + parsed.text + "”  ·  " +
+                              S.lastLatency + "ms";
+    }).catch(function (e) {
+      S.thinking = false;
+      playEl.classList.remove("thinking");
+      history.pop();
+      $("said").textContent = "Network error reaching Claude: " + e.message;
+      fallbackLine();
+    });
   }
 
-  function respond() {
-    if (S.speaking) { return; }
+  function fallbackLine() {
     var i = Math.floor(Math.random() * LINES.length);
     if (i === S.lastLine) { i = (i + 1) % LINES.length; }
     S.lastLine = i;
@@ -888,26 +821,100 @@
     }
     if (sound) { fx(sound); }
     say(line.t);
-    $("said").textContent = "“" + line.t + "”";
+    if (CFG.brain !== "claude") { $("said").textContent = "“" + line.t + "”"; }
+  }
+
+  /* -------- speech recognition: only used to feed Claude some words ----- */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, recWanted = false;
+
+  function startRecog() {
+    if (!SR) { sttState = "unsupported"; return; }
+    if (CFG.brain !== "claude") { return; }
+    recWanted = true;
+    try {
+      rec = new SR();
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.lang = "en-US";
+      rec.onresult = function (e) {
+        for (var i = e.resultIndex; i < e.results.length; i++) {
+          if (!e.results[i].isFinal) { continue; }
+          var alt = e.results[i][0];
+          // Confidence gate (brief 5.1): drop low-scoring audio as noise rather
+          // than let garbled babble reach the model as words.
+          if (typeof alt.confidence === "number" && alt.confidence > 0 &&
+              alt.confidence < 0.25) { continue; }
+          var t = (alt.transcript || "").trim();
+          if (t.length < 2) { continue; }
+          lastHeard = t;
+          askClaude(t);
+        }
+      };
+      rec.onerror = function (e) {
+        sttState = e.error === "not-allowed" ? "denied" : "error: " + e.error;
+      };
+      rec.onend = function () { if (recWanted && S.running) { try { rec.start(); } catch (e) {} } };
+      rec.start();
+      sttState = "listening";
+    } catch (e) { sttState = "failed"; }
+  }
+
+  function stopRecog() {
+    recWanted = false;
+    if (rec) { try { rec.stop(); } catch (e) {} rec = null; }
+    sttState = "off";
+  }
+
+  /* ----------------------------------------------------------- the loop */
+  function onSpeechStart() {
+    S.listening = true;
+    S.lastOpen = performance.now();
+    playEl.classList.add("listening");
+    if (fxGain) { fxGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05); }
+    grabFrame();
+    var now = performance.now();
+    if (now - S.lastBackchannel > 4000 && Math.random() < 0.55) {
+      S.lastBackchannel = now;
+      say(BACKCHANNEL[Math.floor(Math.random() * BACKCHANNEL.length)],
+          { backchannel: true, pitch: 1.7, rate: 1.3 });
+    }
+  }
+
+  function onSpeechEnd() {
+    S.listening = false;
+    playEl.classList.remove("listening");
+    if (fxGain) { fxGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.12); }
+    if (S.lastOpen) { S.openMs += performance.now() - S.lastOpen; S.lastOpen = 0; }
+    if (S.speaking || S.thinking) { return; }
+
+    if (CFG.brain === "claude" && CFG.key) {
+      // Give recognition a moment to deliver words; never let Bo stall waiting.
+      if (pendingTimer) { clearTimeout(pendingTimer); }
+      pendingTimer = setTimeout(function () {
+        pendingTimer = null;
+        if (!S.thinking && !S.speaking) { fallbackLine(); }
+      }, 2200);
+      return;
+    }
+    fallbackLine();
   }
 
   function grabFrame() {
     if (!videoEl || videoEl.readyState < 2) { return; }
-    var c = $("frame"), ctx = c.getContext("2d");
-    ctx.drawImage(videoEl, 0, 0, c.width, c.height);
+    var c = $("frame");
+    c.getContext("2d").drawImage(videoEl, 0, 0, c.width, c.height);
     S.frames++;
   }
 
   function tick() {
     rafId = requestAnimationFrame(tick);
     if (!analyser) { return; }
-
     analyser.getFloatTimeDomainData(buf);
     var sum = 0;
     for (var i = 0; i < buf.length; i++) { sum += buf[i] * buf[i]; }
     var rms = Math.sqrt(sum / buf.length);
 
-    // adaptive floor: creeps up fast in quiet, down slowly
     if (!S.listening) {
       noiseFloor = rms < noiseFloor ? noiseFloor * 0.96 + rms * 0.04
                                     : noiseFloor * 0.998 + rms * 0.002;
@@ -931,57 +938,65 @@
       $("sTurns").textContent = String(S.turns);
       $("sFrames").textContent = String(S.frames);
       var el = (now - S.startedAt) / 1000;
-      var mm = Math.floor(el / 60), ss = Math.floor(el % 60);
-      $("sClock").textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+      $("sClock").textContent = Math.floor(el / 60) + ":" +
+        (Math.floor(el % 60) < 10 ? "0" : "") + Math.floor(el % 60);
       var open = S.openMs + (S.lastOpen ? now - S.lastOpen : 0);
       $("sDuty").textContent = (el > 1 ? Math.round(open / (el * 10)) : 0) + "%";
       $("diag").innerHTML = diagText();
     }
   }
 
-  /* --------------------------------------------------------------- boot */
+  /* --------------------------------------------------------- diagnostics */
+  function diagText() {
+    var voices = window.speechSynthesis ? speechSynthesis.getVoices().length : 0;
+    var st = { ok: "working", blocked: "BLOCKED by the browser",
+               absent: "not supported here", unknown: "not tried yet" }[speechState];
+    var bad = speechState === "blocked" || speechState === "absent";
+    var out = "Voice: <b class='" + (bad ? "bad" : "") + "'>" + st + "</b><br>" +
+              "Voices installed: <b>" + voices + "</b><br>" +
+              "Sound effects: <b>" + (audioCtx ? audioCtx.state : "not started") + "</b><br>" +
+              "Camera frame: <b>" + (videoEl ? "yes" : "no") + "</b>";
+    if (CFG.brain === "claude") {
+      out += "<br>Word recognition: <b class='" +
+             (sttState === "listening" ? "" : "bad") + "'>" + sttState + "</b>" +
+             "<br>Last Claude reply: <b>" +
+             (S.lastLatency ? S.lastLatency + "ms" : "none yet") + "</b>";
+    }
+    return out;
+  }
+
+  function runTest() {
+    ensureCtx();
+    unlockAudio("Test. One two three.");
+    fx("vroom");
+  }
+
+  /* ---------------------------------------------------------- wake / end */
   var wakeLock = null;
 
-  function begin() {
-    var btn = $("go");
-    btn.disabled = true;
-    btn.textContent = "WAKING UP...";
-    $("err").textContent = "";
+  function wake() {
+    if (S.running) { return; }
     ensureCtx();
-    unlockAudio("Hi! I'm Bo!");   // synchronous - this is the gesture
+    unlockAudio("Hi! I'm Bo!");          // synchronous: this IS the gesture
+    $("wake").classList.remove("show");
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      fail("This browser won't give a page microphone access. Try Safari on iPhone or Chrome on Android.");
-      return;
-    }
-
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { return; }
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: { facingMode: "environment", width: { ideal: 640 } }
-    }).then(start).catch(function () {
-      // camera refused or absent — mic alone is enough to feel it
+    }).then(live).catch(function () {
       navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      }).then(start).catch(function (e2) {
-        fail("Couldn't get the microphone. " +
-             (e2 && e2.name === "NotAllowedError"
-               ? "Permission was declined — allow the mic and tap again."
-               : "Check that nothing else is using it."));
+      }).then(live).catch(function () {
+        $("wake").textContent = "bo needs the microphone — tap again";
+        $("wake").classList.add("show");
       });
     });
   }
 
-  function fail(msg) {
-    $("err").textContent = msg;
-    var btn = $("go");
-    btn.disabled = false;
-    btn.textContent = "TRY AGAIN";
-  }
-
-  function start(stream) {
+  function live(stream) {
     micStream = stream;
     ensureCtx();
-
     var src = audioCtx.createMediaStreamSource(stream);
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 1024;
@@ -990,7 +1005,6 @@
     src.connect(analyser);
 
     if (stream.getVideoTracks().length) {
-      camStream = stream;
       videoEl = document.createElement("video");
       videoEl.setAttribute("playsinline", "");
       videoEl.muted = true;
@@ -998,100 +1012,110 @@
       videoEl.play().catch(function () {});
     }
 
-    startEl.style.display = "none";
-    playEl.classList.add("on");
+    playEl.classList.remove("asleep");
     S.running = true;
     S.startedAt = performance.now();
-
-    setMood("curious");
-    scheduleBlink();
-    scheduleGaze();
-    tick();
+    setMood("delight");
+    scheduleBlink(); scheduleGaze(); tick();
+    setTimeout(function () { fx("boing"); }, 260);
+    if (CFG.brain === "claude") { startRecog(); }
 
     if (navigator.wakeLock && navigator.wakeLock.request) {
-      navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; })
-        .catch(function () {});
+      navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () {});
     }
-
-    // the greeting already fired inside the tap; just land the pose and a noise
-    setMood("delight");
-    setTimeout(function () { fx("boing"); }, 260);
   }
 
   function end() {
     S.running = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (window.speechSynthesis) { speechSynthesis.cancel(); }
-    stopMouth();
-    [micStream, camStream].forEach(function (s) {
-      if (s) { s.getTracks().forEach(function (t) { t.stop(); }); }
-    });
-    micStream = camStream = null;
-    analyser = null;
+    if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+    stopRecog(); stopMouth();
+    if (micStream) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
+    videoEl = null; analyser = null; history = [];
     if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
     panelEl.classList.remove("on");
-    playEl.classList.remove("on", "listening");
-    startEl.style.display = "flex";
-    var btn = $("go");
-    btn.disabled = false;
-    btn.textContent = "TAP TO WAKE BO";
-    S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0;
+    playEl.classList.add("asleep");
+    playEl.classList.remove("listening", "thinking");
+    S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0; S.lastLatency = 0;
+    $("wake").textContent = "tap to wake bo";
+    $("wake").classList.add("show");
   }
 
-  /* --------------------------------------------------------- diagnostics */
-  function diagText() {
-    var voices = window.speechSynthesis ? speechSynthesis.getVoices().length : 0;
-    var st = { ok: "working", blocked: "BLOCKED by the browser",
-               absent: "not supported here", unknown: "not tried yet" }[speechState];
-    var bad = (speechState === "blocked" || speechState === "absent");
-    return "Voice: <b class='" + (bad ? "bad" : "") + "'>" + st + "</b><br>" +
-           "Voices installed: <b>" + voices + "</b><br>" +
-           "Sound effects: <b>" + (audioCtx ? audioCtx.state : "not started") + "</b><br>" +
-           "Camera frame: <b>" + (videoEl ? "yes" : "no") + "</b>";
+  /* ------------------------------------------------------------ settings */
+  function paintBrain() {
+    var claude = CFG.brain === "claude";
+    $("bCanned").setAttribute("aria-pressed", String(!claude));
+    $("bClaude").setAttribute("aria-pressed", String(claude));
+    $("claudeCfg").style.display = claude ? "flex" : "none";
+    $("brainNote").innerHTML = claude
+      ? "Bo listens for words, sends them <b>with the camera frame</b> to Claude, and speaks " +
+        "the reply. This is speech&rarr;text&rarr;model&rarr;speech — the stack the brief rules " +
+        "out for the real build — so expect 2–4s, not the sub-2s target. It does test the " +
+        "prompt and whether the picture rescues garbled words."
+      : "Bo replies from a fixed list of lines. No key, no cost, instant.";
   }
 
-  function runTest(outEl) {
-    ensureCtx();
-    unlockAudio("Test. One two three.");
-    fx("vroom");
-    setTimeout(function () {
-      if (!outEl) { return; }
-      if (speechState === "ok") {
-        outEl.className = "testout";
-        outEl.textContent = "Both working — you should have heard an engine and a voice.";
-      } else {
-        outEl.className = "testout bad";
-        outEl.textContent = "Engine noise should have played, but this browser blocked " +
-          "the voice. Bo still works — he'll use sounds instead of words. " +
-          "Opening the GitHub Pages link in Safari usually fixes it.";
-      }
-    }, 2200);
-  }
+  $("bCanned").addEventListener("click", function () {
+    save("brain", "canned"); stopRecog(); paintBrain();
+  });
+  $("bClaude").addEventListener("click", function () {
+    save("brain", "claude"); paintBrain();
+    if (S.running) { startRecog(); }
+  });
+
+  $("key").value = CFG.key;
+  $("model").value = CFG.model;
+  $("child").value = CFG.child;
+  $("lex").value = CFG.lex;
+  $("key").addEventListener("change", function () { save("key", this.value.trim()); });
+  $("model").addEventListener("change", function () { save("model", this.value); });
+  $("child").addEventListener("change", function () { save("child", this.value.trim() || "Hawk"); });
+  $("lex").addEventListener("change", function () { save("lex", this.value); });
+  paintBrain();
 
   /* ------------------------------------------------------------ handlers */
-  $("go").addEventListener("click", begin);
-  $("test").addEventListener("click", function () { runTest($("testout")); });
-  $("ptest").addEventListener("click", function () { runTest(null); });
-
-  var taps = [];
-  $("corner").addEventListener("click", function () {
-    var now = Date.now();
-    taps.push(now);
-    taps = taps.filter(function (t) { return now - t < 900; });
-    if (taps.length >= 3) { taps = []; panelEl.classList.add("on"); }
+  // Tap Bo to wake him. The gear is press-and-hold so small hands can't open it.
+  playEl.addEventListener("click", function (e) {
+    if ($("gear").contains(e.target)) { return; }
+    wake();
   });
+
+  var holdTimer = null;
+  function holdStart(e) {
+    e.preventDefault();
+    $("gear").classList.add("holding");
+    holdTimer = setTimeout(function () {
+      holdTimer = null;
+      $("gear").classList.remove("holding");
+      panelEl.classList.add("on");
+    }, 620);
+  }
+  function holdEnd() {
+    $("gear").classList.remove("holding");
+    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+  }
+  var g = $("gear");
+  g.addEventListener("touchstart", holdStart, { passive: false });
+  g.addEventListener("touchend", holdEnd);
+  g.addEventListener("touchcancel", holdEnd);
+  g.addEventListener("mousedown", holdStart);
+  g.addEventListener("mouseup", holdEnd);
+  g.addEventListener("mouseleave", holdEnd);
 
   $("close").addEventListener("click", function () { panelEl.classList.remove("on"); });
   $("end").addEventListener("click", end);
+  $("ptest").addEventListener("click", runTest);
 
-  // a toddler will drag on this constantly — don't let the page move
   document.addEventListener("touchmove", function (e) {
-    if (S.running && !panelEl.classList.contains("on")) { e.preventDefault(); }
+    if (!panelEl.classList.contains("on")) { e.preventDefault(); }
   }, { passive: false });
 
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && window.speechSynthesis) { speechSynthesis.cancel(); }
   });
+
+  setTimeout(function () { if (!S.running) { $("wake").classList.add("show"); } }, 1500);
 })();
 </script>
 
