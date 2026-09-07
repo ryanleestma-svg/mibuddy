@@ -5,6 +5,9 @@ play with physical toys. Not a tutor, not a chatbot, not a babysitter.
 
 **Status: pre-prototype. No code yet — deliberately.**
 
+Provider analysis: [`docs/provider-matrix.md`](docs/provider-matrix.md). Economics:
+[`docs/cost-model.md`](docs/cost-model.md) + [`docs/cost-model.xlsx`](docs/cost-model.xlsx).
+
 The full design brief is in [`docs/build-brief.md`](docs/build-brief.md). Read it
 before writing anything; the product lives in the design principles, not the code.
 
