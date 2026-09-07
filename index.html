@@ -458,11 +458,17 @@
   var playEl = $("play"), panelEl = $("panel");
 
   /* ------------------------------------------------------------- config */
+  // Replaced at publish time for the private artifact build. The committed
+  // source keeps the placeholder, so no live key is ever pushed to git.
+  var BAKED_KEY = "__BO_API_KEY__";
+  var baked = BAKED_KEY.indexOf("__BO_") === 0 ? "" : BAKED_KEY;
+
   var CFG = {
-    key:   localStorage.getItem("bo.key")   || "",
+    key:   baked || localStorage.getItem("bo.key") || "",
     voice: localStorage.getItem("bo.voice") || "",
     model: localStorage.getItem("bo.model") || "claude-haiku-4-5",
-    brain: localStorage.getItem("bo.brain") === "claude" ? "claude" : "canned",
+    brain: (localStorage.getItem("bo.brain") || (baked ? "claude" : "canned")) === "claude"
+             ? "claude" : "canned",
     child: localStorage.getItem("bo.child") || "Hawk",
     lex:   localStorage.getItem("bo.lex")   || ""
   };
@@ -509,7 +515,7 @@
   var audioCtx = null, analyser = null, buf = null, fxGain = null;
   var micStream = null, videoEl = null, rafId = null;
   var noiseFloor = 0.012, THRESH_MULT = 2.6, MIN_THRESH = 0.016;
-  var aboveSince = 0, belowSince = 0, ONSET_MS = 40, RELEASE_MS = 650;
+  var aboveSince = 0, belowSince = 0, ONSET_MS = 40, RELEASE_MS = 420;
 
   /* -------------------------------------------------------------- sound */
   function ensureCtx() {
@@ -913,6 +919,23 @@
     ].join("\n");
   }
 
+  // Haiku 4.5 rejects output_config.effort outright, so it is only sent to the
+  // models that accept it. Verified against the API.
+  function reqBody() {
+    var body = {
+      model: CFG.model,
+      max_tokens: 100,
+      stream: true,
+      system: [{ type: "text", text: systemPrompt(),
+                 cache_control: { type: "ephemeral" } }],
+      messages: history
+    };
+    if (CFG.model === "claude-opus-5" || CFG.model === "claude-sonnet-5") {
+      body.output_config = { effort: "low" };
+    }
+    return body;
+  }
+
   function lastFrameB64() {
     if (!videoEl || !S.frames) { return null; }
     try { return $("frame").toDataURL("image/jpeg", 0.6).split(",")[1]; }
@@ -946,6 +969,48 @@
     S.thinking = true;
     playEl.classList.add("thinking");
     var t0 = performance.now();
+    var usageIn = null, usageOut = null, full = "", spoken = false, firstAudioAt = 0;
+
+    function done(errText) {
+      S.thinking = false;
+      playEl.classList.remove("thinking");
+      if (usageIn) {
+        addSpend({
+          input_tokens: usageIn.input_tokens || 0,
+          cache_creation_input_tokens: usageIn.cache_creation_input_tokens || 0,
+          cache_read_input_tokens: usageIn.cache_read_input_tokens || 0,
+          output_tokens: (usageOut && usageOut.output_tokens) || 0
+        });
+      }
+      if (errText) {
+        history.pop();
+        $("said").textContent = errText;
+        if (!spoken) { fallbackLine(); }
+        return;
+      }
+      var parsed = parseReply(full);
+      if (!parsed.text) { history.pop(); if (!spoken) { fallbackLine(); } return; }
+      history.push({ role: "assistant", content: [{ type: "text", text: full }] });
+      S.turns++;
+      setMood(parsed.mood);
+      if (!spoken) { spoken = true; firstAudioAt = performance.now(); say(parsed.text); }
+      S.lastLatency = Math.round((firstAudioAt || performance.now()) - t0);
+      $("said").textContent = "heard: \u201c" + heard + "\u201d\nBo: \u201c" +
+        parsed.text + "\u201d  \u00b7  " + S.lastLatency + "ms to first word";
+    }
+
+    // Speak the moment the first line is complete, rather than waiting for the
+    // mood tag on line two. On a one-sentence reply this is most of the wait.
+    function maybeSpeak() {
+      if (spoken) { return; }
+      var nl = full.indexOf("\n");
+      if (nl === -1) { return; }
+      var first = full.slice(0, nl).replace(/^["']|["']$/g, "").trim();
+      if (!first) { return; }
+      spoken = true;
+      firstAudioAt = performance.now();
+      say(first);
+    }
 
     fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -955,53 +1020,49 @@
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
-      body: JSON.stringify({
-        model: CFG.model,
-        max_tokens: 100,
-        output_config: { effort: "low" },
-        system: [{ type: "text", text: systemPrompt(),
-                   cache_control: { type: "ephemeral" } }],
-        messages: history
-      })
+      body: JSON.stringify(reqBody())
     }).then(function (r) {
-      return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
-    }).then(function (res) {
-      S.thinking = false;
-      playEl.classList.remove("thinking");
-      S.lastLatency = Math.round(performance.now() - t0);
-
-      if (!res.ok) {
-        var msg = (res.j && res.j.error && res.j.error.message) || ("HTTP " + res.status);
-        $("said").textContent = "Claude error: " + msg;
-        history.pop();
-        fallbackLine();
-        return;
+      if (!r.ok || !r.body) {
+        return r.text().then(function (t) {
+          var m = t;
+          try { m = JSON.parse(t).error.message; } catch (e) {}
+          done("Claude error: " + m);
+        });
       }
-      // A refusal is not a dead end - Bo says something and keeps rolling.
-      if (res.j.stop_reason === "refusal") {
-        history.pop();
-        $("said").textContent = "Claude declined that one — used a canned line.";
-        fallbackLine();
-        return;
+      var reader = r.body.getReader(), dec = new TextDecoder(), buf = "";
+      function pump() {
+        return reader.read().then(function (chunk) {
+          if (chunk.done) { done(null); return; }
+          buf += dec.decode(chunk.value, { stream: true });
+          var lines = buf.split("\n");
+          buf = lines.pop();
+          for (var i = 0; i < lines.length; i++) {
+            var ln = lines[i];
+            if (ln.indexOf("data:") !== 0) { continue; }
+            var raw = ln.slice(5).trim();
+            if (!raw) { continue; }
+            var ev;
+            try { ev = JSON.parse(raw); } catch (e) { continue; }
+            if (ev.type === "message_start" && ev.message && ev.message.usage) {
+              usageIn = ev.message.usage;
+            } else if (ev.type === "content_block_delta" &&
+                       ev.delta && ev.delta.type === "text_delta") {
+              full += ev.delta.text;
+              maybeSpeak();
+            } else if (ev.type === "message_delta") {
+              if (ev.usage) { usageOut = ev.usage; }
+              if (ev.delta && ev.delta.stop_reason === "refusal") {
+                done("Claude declined that one \u2014 used a canned line.");
+                return;
+              }
+            }
+          }
+          return pump();
+        });
       }
-      if (res.j.usage) { addSpend(res.j.usage); }
-      var out = "";
-      (res.j.content || []).forEach(function (b) { if (b.type === "text") { out += b.text; } });
-      var parsed = parseReply(out);
-      if (!parsed.text) { history.pop(); fallbackLine(); return; }
-
-      history.push({ role: "assistant", content: [{ type: "text", text: out }] });
-      S.turns++;
-      setMood(parsed.mood);
-      say(parsed.text);
-      $("said").textContent = "heard: “" + heard + "”\nBo: “" + parsed.text + "”  ·  " +
-                              S.lastLatency + "ms";
+      return pump();
     }).catch(function (e) {
-      S.thinking = false;
-      playEl.classList.remove("thinking");
-      history.pop();
-      $("said").textContent = "Network error reaching Claude: " + e.message;
-      fallbackLine();
+      done("Network error reaching Claude: " + e.message);
     });
   }
 
@@ -1023,7 +1084,20 @@
 
   /* -------- speech recognition: only used to feed Claude some words ----- */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var rec = null, recWanted = false;
+  var rec = null, recWanted = false, interim = "", interimTimer = null, lastSent = "";
+
+  // One utterance must not be sent twice - once from a settled interim and
+  // again when the recognizer finalises the same words.
+  function dispatch(text) {
+    if (interimTimer) { clearTimeout(interimTimer); interimTimer = null; }
+    var norm = text.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+    if (!norm || norm === lastSent) { return; }
+    if (S.speaking || S.thinking) { return; }
+    lastSent = norm;
+    setTimeout(function () { if (lastSent === norm) { lastSent = ""; } }, 4000);
+    lastHeard = text;
+    askClaude(text);
+  }
 
   function startRecog() {
     if (!SR) { sttState = "unsupported"; return; }
@@ -1032,20 +1106,32 @@
     try {
       rec = new SR();
       rec.continuous = true;
-      rec.interimResults = false;
+      rec.interimResults = true;
       rec.lang = "en-US";
       rec.onresult = function (e) {
+        // Bo's own voice reaches the mic. Browser AEC helps but is not
+        // reliable across devices, so never act on anything heard while he
+        // is speaking - that is what would make him talk over himself.
+        if (S.speaking) { interim = ""; return; }
         for (var i = e.resultIndex; i < e.results.length; i++) {
-          if (!e.results[i].isFinal) { continue; }
           var alt = e.results[i][0];
-          // Confidence gate (brief 5.1): drop low-scoring audio as noise rather
-          // than let garbled babble reach the model as words.
-          if (typeof alt.confidence === "number" && alt.confidence > 0 &&
-              alt.confidence < 0.25) { continue; }
           var t = (alt.transcript || "").trim();
-          if (t.length < 2) { continue; }
-          lastHeard = t;
-          askClaude(t);
+          if (e.results[i].isFinal) {
+            // Confidence gate (brief 5.1): drop low-scoring audio as noise.
+            if (typeof alt.confidence === "number" && alt.confidence > 0 &&
+                alt.confidence < 0.25) { interim = ""; continue; }
+            if (t.length >= 2) { dispatch(t); }
+            interim = "";
+          } else if (t.length >= 3) {
+            // Don't wait for the recognizer to decide it's finished - that
+            // alone costs several hundred ms. Fire on a settled interim.
+            interim = t;
+            if (interimTimer) { clearTimeout(interimTimer); }
+            interimTimer = setTimeout(function () {
+              interimTimer = null;
+              if (interim && !S.speaking) { dispatch(interim); interim = ""; }
+            }, 320);
+          }
         }
       };
       rec.onerror = function (e) {
@@ -1059,6 +1145,8 @@
 
   function stopRecog() {
     recWanted = false;
+    if (interimTimer) { clearTimeout(interimTimer); interimTimer = null; }
+    interim = ""; lastSent = "";
     if (rec) { try { rec.stop(); } catch (e) {} rec = null; }
     sttState = "off";
   }
@@ -1092,7 +1180,7 @@
       pendingTimer = setTimeout(function () {
         pendingTimer = null;
         if (!S.thinking && !S.speaking) { fallbackLine(); }
-      }, 2200);
+      }, 2600);
       return;
     }
     fallbackLine();
@@ -1122,7 +1210,11 @@
       noiseFloor = rms < noiseFloor ? noiseFloor * 0.96 + rms * 0.04
                                     : noiseFloor * 0.998 + rms * 0.002;
     }
-    var threshold = Math.max(MIN_THRESH, noiseFloor * THRESH_MULT);
+    // Raise the bar while Bo is speaking so his own voice doesn't trigger the
+    // lean-in. He is never interrupted either way - the utterance always runs
+    // to the end (brief 2.5: duck, don't stop).
+    var threshold = Math.max(MIN_THRESH, noiseFloor * THRESH_MULT) *
+                    (S.speaking ? 3.2 : 1);
     var now = performance.now();
 
     if (rms > threshold) {
