@@ -373,6 +373,8 @@
       One per line. Goes into Bo's prompt every session. This is the thing that
       turns "it's a gore" plus a photo of a red truck into <b>El Toro Loco</b>.
     </p>
+    <button class="pbtn" id="ctest">TEST CLAUDE NOW</button>
+    <div id="ctestout" class="diag">Not tested yet.</div>
   </section>
 
   <section>
@@ -439,12 +441,26 @@
     key:   baked || localStorage.getItem("bo.key") || "",
     voice: localStorage.getItem("bo.voice") || "",
     model: localStorage.getItem("bo.model") || "claude-haiku-4-5",
-    brain: (localStorage.getItem("bo.brain") || (baked ? "claude" : "canned")) === "claude"
-             ? "claude" : "canned",
+    brain: "canned",   // set just below, once we know about the baked key
     child: localStorage.getItem("bo.child") || "Hawk",
     lex:   localStorage.getItem("bo.lex")   || ""
   };
   function save(k, v) { CFG[k] = v; try { localStorage.setItem("bo." + k, v); } catch (e) {} }
+
+  // A build that ships with a key should arrive switched on. Without this, a
+  // "canned" written to localStorage by an earlier build wins forever and the
+  // key looks broken.
+  (function initBrain() {
+    var stored = localStorage.getItem("bo.brain");
+    var seen = localStorage.getItem("bo.keyseen");
+    if (baked && seen !== "1") {
+      CFG.brain = "claude";
+      try { localStorage.setItem("bo.brain", "claude");
+            localStorage.setItem("bo.keyseen", "1"); } catch (e) {}
+    } else {
+      CFG.brain = stored === "claude" ? "claude" : (baked ? "claude" : "canned");
+    }
+  })();
 
   /* ---------------------------------------------------------- line bank */
   var LINES = [
@@ -830,6 +846,11 @@
 
   /* ------------------------------------------------------------- Claude */
   var history = [], sttState = "off", pendingTimer = null, lastHeard = "";
+  var lastError = "";
+
+  // Sent when the microphone heard speech but no words could be transcribed.
+  var NO_WORDS = "(they said something, but the words were not caught \u2014 " +
+                 "react to what you can see them holding or doing)";
 
   // $ per 1M tokens. Cache reads bill at a fraction of the input rate.
   var PRICE = {
@@ -956,6 +977,7 @@
       }
       if (errText) {
         history.pop();
+        lastError = errText;
         $("said").textContent = errText;
         if (!spoken) { fallbackLine(); }
         return;
@@ -967,8 +989,11 @@
       setMood(parsed.mood);
       if (!spoken) { spoken = true; firstAudioAt = performance.now(); say(parsed.text); }
       S.lastLatency = Math.round((firstAudioAt || performance.now()) - t0);
-      $("said").textContent = "heard: \u201c" + heard + "\u201d\nBo: \u201c" +
-        parsed.text + "\u201d  \u00b7  " + S.lastLatency + "ms to first word";
+      $("said").textContent =
+        (heard === NO_WORDS ? "heard: (no words \u2014 picture only)"
+                            : "heard: \u201c" + heard + "\u201d") +
+        "\nBo: \u201c" + parsed.text + "\u201d  \u00b7  " +
+        S.lastLatency + "ms to first word";
     }
 
     // Speak the moment the first line is complete, rather than waiting for the
@@ -1147,12 +1172,16 @@
     if (S.speaking || S.thinking || !S.running) { return; }
 
     if (CFG.brain === "claude" && CFG.key) {
-      // Give recognition a moment to deliver words; never let Bo stall waiting.
+      // Give recognition a short window. If it produces nothing - which is the
+      // normal case on browsers with poor speech support - still ask Claude,
+      // using the frame alone. Reacting to what he can see beats a canned line.
       if (pendingTimer) { clearTimeout(pendingTimer); }
       pendingTimer = setTimeout(function () {
         pendingTimer = null;
-        if (!S.thinking && !S.speaking) { fallbackLine(); }
-      }, 2600);
+        if (S.thinking || S.speaking) { return; }
+        var words = (interim || "").trim();
+        askClaude(words.length >= 2 ? words : NO_WORDS);
+      }, 1100);
       return;
     }
     fallbackLine();
@@ -1232,11 +1261,20 @@
               "Voices installed: <b>" + voices + "</b><br>" +
               "Sound effects: <b>" + (audioCtx ? audioCtx.state : "not started") + "</b><br>" +
               "Camera frame: <b>" + (videoEl ? "yes" : "no") + "</b>";
+    out += "<br>Brain: <b class='" + (CFG.brain === "claude" ? "" : "bad") + "'>" +
+           CFG.brain + "</b>" +
+           "<br>API key: <b class='" + (CFG.key ? "" : "bad") + "'>" +
+           (CFG.key ? "present (" + CFG.key.slice(0, 11) + "\u2026)" : "MISSING") + "</b>";
     if (CFG.brain === "claude") {
       out += "<br>Word recognition: <b class='" +
-             (sttState === "listening" ? "" : "bad") + "'>" + sttState + "</b>" +
-             "<br>Last Claude reply: <b>" +
+             (sttState === "listening" ? "" : "bad") + "'>" + sttState + "</b>";
+      if (sttState !== "listening") {
+        out += "<br><span style='color:var(--muted)'>No speech-to-text here, so Bo " +
+               "answers from the camera frame alone.</span>";
+      }
+      out += "<br>Last Claude reply: <b>" +
              (S.lastLatency ? S.lastLatency + "ms" : "none yet") + "</b>";
+      if (lastError) { out += "<br>Last error: <b class='bad'>" + lastError + "</b>"; }
     }
     return out;
   }
@@ -1245,6 +1283,64 @@
     ensureCtx();
     unlockAudio("Test. One two three.");
     fx("vroom");
+  }
+
+  // One real call, reported in full, so a failure names itself instead of
+  // silently degrading to a canned line.
+  function testClaude() {
+    var out = $("ctestout");
+    if (!CFG.key) {
+      out.innerHTML = "<b class='bad'>No API key.</b> This build has none baked " +
+        "in, so paste one above.";
+      return;
+    }
+    out.textContent = "Calling " + CFG.model + "\u2026";
+    var t0 = performance.now();
+    var img = lastFrameB64();
+    var content = [];
+    if (img) {
+      content.push({ type: "image",
+                     source: { type: "base64", media_type: "image/jpeg", data: img } });
+    }
+    content.push({ type: "text", text: img
+      ? "look at this!"
+      : "look at my truck!  (no camera frame available)" });
+
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": CFG.key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: CFG.model,
+        max_tokens: 100,
+        system: [{ type: "text", text: systemPrompt() }],
+        messages: [{ role: "user", content: content }]
+      })
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; });
+    }).then(function (res) {
+      var ms = Math.round(performance.now() - t0);
+      if (!res.ok) {
+        var m = (res.j && res.j.error && res.j.error.message) || ("HTTP " + res.status);
+        out.innerHTML = "<b class='bad'>Failed:</b> " + m;
+        return;
+      }
+      var txt = "";
+      (res.j.content || []).forEach(function (b) { if (b.type === "text") { txt += b.text; } });
+      var parsed = parseReply(txt);
+      if (res.j.usage) { addSpend(res.j.usage); }
+      out.innerHTML = "<b>Working.</b> " + ms + "ms &middot; " +
+        (img ? "with camera frame" : "no frame yet - wake Bo first") +
+        "<br>Bo said: \u201c" + parsed.text + "\u201d";
+      setMood(parsed.mood);
+      say(parsed.text);
+    }).catch(function (e) {
+      out.innerHTML = "<b class='bad'>Network error:</b> " + e.message;
+    });
   }
 
   /* ---------------------------------------------------------- wake / end */
@@ -1382,7 +1478,12 @@
   $("model").value = CFG.model;
   $("child").value = CFG.child;
   $("lex").value = CFG.lex;
-  $("key").addEventListener("change", function () { save("key", this.value.trim()); });
+  $("key").addEventListener("change", function () {
+    save("key", this.value.trim());
+    if (CFG.key && CFG.brain !== "claude") { save("brain", "claude"); paintBrain(); }
+    $("ctestout").textContent = CFG.key
+      ? "Key saved. Tap TEST CLAUDE NOW to check it." : "Key cleared.";
+  });
   $("model").addEventListener("change", function () { save("model", this.value); });
   $("child").addEventListener("change", function () { save("child", this.value.trim() || "Hawk"); });
   $("lex").addEventListener("change", function () { save("lex", this.value); });
@@ -1428,6 +1529,7 @@
   $("close").addEventListener("click", function () { panelEl.classList.remove("on"); });
   $("end").addEventListener("click", end);
   $("ptest").addEventListener("click", runTest);
+  $("ctest").addEventListener("click", testClaude);
 
   document.addEventListener("touchmove", function (e) {
     if (!panelEl.classList.contains("on")) { e.preventDefault(); }
