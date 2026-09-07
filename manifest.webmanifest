@@ -1,0 +1,14 @@
+{
+  "name": "Bo",
+  "short_name": "Bo",
+  "description": "Feel prototype for a toddler play companion.",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#16181D",
+  "theme_color": "#16181D",
+  "icons": [
+    { "src": "icons/bo-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/bo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="description" content="Feel prototype for a toddler play companion.">
+<meta name="theme-color" content="#16181D">
+<meta name="color-scheme" content="dark">
+<!-- launches fullscreen with no URL bar once added to the home screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bo">
+<link rel="apple-touch-icon" href="icons/bo-180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/bo-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Bo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;800&display=swap">
+<style>
+  html { background: #16181D; color-scheme: dark; }
+  body { margin: 0; font: 14px system-ui, sans-serif; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  /* keep content clear of the notch and home indicator */
+  #start { padding-top: max(28px, env(safe-area-inset-top)) !important;
+           padding-bottom: max(28px, env(safe-area-inset-bottom)) !important; }
+  #panel { padding-top: max(24px, env(safe-area-inset-top)) !important;
+           padding-bottom: max(24px, env(safe-area-inset-bottom)) !important; }
+</style>
+</head>
+<body>
+<style>
+  :root {
+    --ground:      #16181D;
+    --ground-lift: #1F232B;
+    --ground-edge: #2C323C;
+    --body:        #FF6B35;
+    --body-deep:   #C93F12;
+    --body-lite:   #FF8F5E;
+    --spark:       #FFD23F;
+    --cool:        #3DDBD9;
+    --cool-deep:   #1A9E9C;
+    --ink:         #F7F4EF;
+    --muted:       #8B929E;
+    --display: "Bungee", "Arial Black", sans-serif;
+    --text: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  /* ---------------------------------------------------------------- start */
+
+  #start {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 430px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .brandline { display: flex; align-items: baseline; gap: 12px; }
+
+  .brand {
+    font-family: var(--display);
+    font-size: clamp(46px, 15vw, 68px);
+    line-height: 0.9;
+    color: var(--body);
+    letter-spacing: 0.01em;
+  }
+
+  .brand-sub {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .lede {
+    font-size: 17px;
+    line-height: 1.5;
+    margin: 0;
+    color: var(--ink);
+    max-width: 38ch;
+  }
+
+  .lede b { color: var(--spark); font-weight: 800; }
+
+  #go {
+    font-family: var(--display);
+    font-size: 26px;
+    color: #2A1004;
+    background: var(--spark);
+    border: none;
+    border-radius: 22px;
+    padding: 26px 20px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #C79A17;
+    transition: transform 90ms ease, box-shadow 90ms ease;
+  }
+  #go:active { transform: translateY(4px); box-shadow: 0 2px 0 #C79A17; }
+  #go:focus-visible { outline: 3px solid var(--cool); outline-offset: 4px; }
+  #go[disabled] { opacity: 0.5; cursor: default; }
+
+  .perm {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .honest {
+    border-top: 1px solid var(--ground-edge);
+    padding-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .honest h2 {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .rows { display: flex; flex-direction: column; gap: 7px; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: 10px;
+    align-items: start;
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .tag {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 0;
+    text-align: center;
+    border-radius: 5px;
+  }
+  .tag.real { background: var(--cool-deep); color: #04211F; }
+  .tag.fake { background: var(--ground-edge); color: var(--muted); }
+
+  .err {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #2A1004;
+    background: var(--spark);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 0;
+  }
+  .err:empty { display: none; }
+
+  /* ----------------------------------------------------------------- play */
+
+  #play {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--ground);
+    touch-action: none;
+  }
+  #play.on { display: flex; }
+
+  #stage {
+    width: min(96vw, 90vh, 620px);
+    height: min(96vw, 90vh, 620px);
+  }
+
+  svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  /* every animated part gets a stable origin in viewBox units */
+  #bo, #earL, #earR, #eyeL, #eyeR, #mouth, #glow, #glowCool, #ring {
+    transform-box: view-box;
+  }
+
+  #bo {
+    transform-origin: 200px 240px;
+    transition: transform 130ms cubic-bezier(.2,.9,.3,1.4);
+  }
+
+  #glow {
+    transform-origin: 200px 230px;
+    transition: opacity 220ms ease, transform 220ms ease;
+    opacity: 0.5;
+  }
+
+  #ring {
+    transform-origin: 200px 230px;
+    opacity: 0;
+    transition: opacity 140ms ease;
+  }
+
+  #glowCool {
+    transform-origin: 200px 230px;
+    opacity: 0;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  #earL { transform-origin: 132px 152px; transition: transform 120ms cubic-bezier(.2,.9,.3,1.5); }
+  #earR { transform-origin: 268px 152px; transition: transform 120ms cubic-bezier(.2,.9,.3,1.5); }
+
+  #eyeL { transform-origin: 150px 222px; }
+  #eyeR { transform-origin: 250px 222px; }
+  .eye  { transition: transform 130ms ease; }
+
+  .blink { animation: blink 160ms ease; }
+  @keyframes blink {
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(0.08); }
+  }
+
+  #mouth { transform-origin: 200px 296px; transition: transform 90ms ease; }
+
+  .shell { transition: fill 400ms ease; }
+
+  /* --- listening: the whole point. instant, and visible across a room --- */
+  #play.listening #bo   { transform: translateY(-14px) scale(1.045); }
+  #play.listening #earL { transform: rotate(-15deg) translateY(-13px); }
+  #play.listening #earR { transform: rotate(15deg) translateY(-13px); }
+  #play.listening .eye  { transform: scale(1.16); }
+  #play.listening #glow     { opacity: 0.2; }
+  #play.listening #glowCool { opacity: 1; transform: scale(1.12); }
+  #play.listening #ring { opacity: 1; animation: pulse 1.1s ease-out infinite; }
+
+  @keyframes pulse {
+    0%   { transform: scale(0.94); opacity: 0.75; }
+    70%  { transform: scale(1.16); opacity: 0; }
+    100% { transform: scale(1.16); opacity: 0; }
+  }
+
+  /* --- idle life: breathing + drift, layer 1 --- */
+  #breath { transform-box: view-box; transform-origin: 200px 300px; animation: breathe 4.2s ease-in-out infinite; }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1, 1); }
+    50%      { transform: scale(1.014, 0.988); }
+  }
+
+  #drift { transform-box: view-box; transform-origin: 200px 320px; animation: drift 11s ease-in-out infinite; }
+  @keyframes drift {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    25%      { transform: translateX(-7px) rotate(-1.4deg); }
+    50%      { transform: translateX(3px) rotate(0.6deg); }
+    75%      { transform: translateX(6px) rotate(1.3deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #breath, #drift, #ring { animation: none; }
+    #bo, .eye, #earL, #earR { transition-duration: 60ms; }
+  }
+
+  /* --------------------------------------------------------- parent panel */
+
+  #corner {
+    position: fixed;
+    top: 0; right: 0;
+    width: 76px; height: 76px;
+    z-index: 5;
+  }
+
+  #panel {
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 20px;
+    background: rgba(14,16,20,0.97);
+    z-index: 10;
+    overflow-y: auto;
+  }
+  #panel.on { display: flex; }
+
+  #panel h2 {
+    font-family: var(--display);
+    font-size: 21px;
+    color: var(--spark);
+    margin: 0;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 9px;
+  }
+
+  .stat {
+    background: var(--ground-lift);
+    border-radius: 11px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .stat .k {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .stat .v {
+    font-size: 21px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .meterwrap { display: flex; flex-direction: column; gap: 7px; }
+
+  .meterlabel {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .meter {
+    position: relative;
+    height: 26px;
+    background: var(--ground-lift);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  #level {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    background: var(--cool);
+    transition: width 55ms linear;
+  }
+  #thresh {
+    position: absolute;
+    top: -3px; bottom: -3px;
+    width: 2px;
+    background: var(--spark);
+  }
+
+  .framebox { display: flex; gap: 12px; align-items: flex-start; }
+  #frame {
+    width: 132px;
+    border-radius: 9px;
+    background: var(--ground-lift);
+    display: block;
+  }
+  .framenote { font-size: 12.5px; line-height: 1.45; color: var(--muted); flex: 1; }
+
+  #said {
+    font-size: 14px;
+    line-height: 1.45;
+    background: var(--ground-lift);
+    border-radius: 11px;
+    padding: 12px 14px;
+    color: var(--ink);
+    min-height: 44px;
+  }
+
+  .pbtns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
+
+  .pbtn {
+    flex: 1 1 120px;
+    font-family: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    padding: 15px 14px;
+    border-radius: 13px;
+    border: none;
+    cursor: pointer;
+    background: var(--ground-edge);
+    color: var(--ink);
+  }
+  .pbtn.primary { background: var(--spark); color: #2A1004; }
+  .pbtn:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
+
+  .hint { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin: 0; }
+</style>
+
+<!-- ============================================================== START -->
+<div id="start">
+  <div class="card">
+    <div class="brandline">
+      <div class="brand">BO</div>
+      <div class="brand-sub">feel prototype</div>
+    </div>
+
+    <p class="lede">
+      Prop the phone up where he's playing and tap the button.
+      Then <b>just talk near it</b> — Bo leans in the instant he hears a voice.
+    </p>
+
+    <button id="go">TAP TO WAKE BO</button>
+
+    <p class="perm">
+      Asks for the mic, and the camera if it can get it. Bo still works
+      without the camera. Nothing leaves the phone.
+    </p>
+
+    <p class="err" id="err"></p>
+
+    <div class="honest">
+      <h2>What's real in this build</h2>
+      <div class="rows">
+        <div class="row"><span class="tag real">real</span><span>Listening. Live mic, on-device voice detection, no network.</span></div>
+        <div class="row"><span class="tag real">real</span><span>The lean-in — ears up, eyes wide — fires off the mic directly, with no model in the loop.</span></div>
+        <div class="row"><span class="tag real">real</span><span>A camera frame grabbed the moment he starts talking. One frame, not video.</span></div>
+        <div class="row"><span class="tag real">real</span><span>Bo never stops mid-sentence when he's interrupted.</span></div>
+        <div class="row"><span class="tag fake">canned</span><span>What Bo actually says. Lines come from a fixed list, not a model — so he'll be enthusiastic but off-topic.</span></div>
+      </div>
+      <p class="hint">
+        Watch whether he keeps playing with his toys — not whether he watches the screen.
+        Tap the top-right corner three times for the parent panel.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================== PLAY -->
+<div id="play">
+  <div id="stage">
+    <svg viewBox="62 86 276 288" aria-label="Bo">
+      <defs>
+        <radialGradient id="gGlowCool">
+          <stop offset="0%"   stop-color="#3DDBD9" stop-opacity="0.5"/>
+          <stop offset="55%"  stop-color="#3DDBD9" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#3DDBD9" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="gGlow">
+          <stop offset="0%"   stop-color="#FF6B35" stop-opacity="0.55"/>
+          <stop offset="55%"  stop-color="#FF6B35" stop-opacity="0.16"/>
+          <stop offset="100%" stop-color="#FF6B35" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
+          <stop id="bodyLite" offset="0%"   stop-color="#FF8F5E"/>
+          <stop id="bodyDeep" offset="100%" stop-color="#E8531B"/>
+        </linearGradient>
+      </defs>
+
+      <circle id="glow" cx="200" cy="230" r="185" fill="url(#gGlow)"/>
+      <circle id="glowCool" cx="200" cy="230" r="185" fill="url(#gGlowCool)"/>
+      <circle id="ring" cx="200" cy="230" r="152" fill="none" stroke="#3DDBD9" stroke-width="5"/>
+
+      <g id="drift">
+        <g id="breath">
+          <g id="bo">
+            <!-- ears -->
+            <g id="earL"><ellipse class="shell" cx="132" cy="152" rx="30" ry="54"
+                 fill="var(--body-deep)" transform="rotate(-22 132 152)"/></g>
+            <g id="earR"><ellipse class="shell" cx="268" cy="152" rx="30" ry="54"
+                 fill="var(--body-deep)" transform="rotate(22 268 152)"/></g>
+
+            <!-- body -->
+            <rect class="shell" x="68" y="140" width="264" height="228" rx="114" fill="url(#gBody)"/>
+
+            <!-- cheeks -->
+            <ellipse cx="112" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
+            <ellipse cx="288" cy="272" rx="24" ry="16" fill="#FF9C72" opacity="0.55"/>
+
+            <!-- eyes -->
+            <g id="eyeL" class="eye">
+              <circle cx="150" cy="222" r="38" fill="#FFFDF8"/>
+              <circle id="pupL" cx="150" cy="224" r="18" fill="#20242B"/>
+              <circle cx="159" cy="213" r="7" fill="#FFFFFF"/>
+            </g>
+            <g id="eyeR" class="eye">
+              <circle cx="250" cy="222" r="38" fill="#FFFDF8"/>
+              <circle id="pupR" cx="250" cy="224" r="18" fill="#20242B"/>
+              <circle cx="259" cy="213" r="7" fill="#FFFFFF"/>
+            </g>
+
+            <!-- mouth -->
+            <ellipse id="mouth" cx="200" cy="296" rx="26" ry="15" fill="#5C1A05"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div id="corner"></div>
+</div>
+
+<!-- ============================================================== PANEL -->
+<div id="panel">
+  <h2>PARENT PANEL</h2>
+
+  <div class="stats">
+    <div class="stat"><span class="k">Session</span><span class="v" id="sClock">0:00</span></div>
+    <div class="stat"><span class="k">Turns</span><span class="v" id="sTurns">0</span></div>
+    <div class="stat"><span class="k">Frames</span><span class="v" id="sFrames">0</span></div>
+    <div class="stat"><span class="k">Mic open</span><span class="v" id="sDuty">0%</span></div>
+  </div>
+
+  <div class="meterwrap">
+    <span class="meterlabel">Mic level &middot; yellow line is the speech threshold</span>
+    <div class="meter"><div id="level"></div><div id="thresh"></div></div>
+  </div>
+
+  <div class="framebox">
+    <canvas id="frame" width="160" height="120"></canvas>
+    <p class="framenote">
+      Last frame, grabbed at speech onset. In the real build this goes to the
+      model <em>with</em> the audio, so "it's a gore" plus a red truck resolves
+      to El Toro Loco.
+    </p>
+  </div>
+
+  <div id="said">&mdash;</div>
+
+  <p class="hint">
+    Mic-open % is the cost driver from the model — the baseline assumed 35%.
+    Whatever it reads here is a better number than the guess.
+  </p>
+
+  <div class="pbtns">
+    <button class="pbtn primary" id="close">BACK TO BO</button>
+    <button class="pbtn" id="end">END SESSION</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var playEl = $("play"), panelEl = $("panel"), startEl = $("start");
+
+  /* ---------------------------------------------------------- line bank */
+  // Rules from the brief: one sentence, big energy, never ask them to repeat,
+  // never correct, questions that are fun to hear even if nobody answers.
+  var LINES = [
+    { t: "Whoa! Look at that one GO!",        m: "excited",  fx: "vroom"  },
+    { t: "Uh oh — is he gonna make it?",      m: "uhoh",     fx: null     },
+    { t: "VROOOM! That one's FAST!",          m: "excited",  fx: "vroom"  },
+    { t: "Big jump! Big big jump!",           m: "delight",  fx: "boing"  },
+    { t: "CRASH! Did you see that?",          m: "excited",  fx: "crash"  },
+    { t: "Ooh. That one's my favourite.",     m: "curious",  fx: null     },
+    { t: "Can he jump over that one?",        m: "curious",  fx: null     },
+    { t: "He's climbing! He's climbing!",     m: "excited",  fx: null     },
+    { t: "Whoosh! Right past me!",            m: "delight",  fx: "whoosh" },
+    { t: "That truck is HUGE.",               m: "delight",  fx: null     },
+    { t: "Do it again! Do it again!",         m: "excited",  fx: null     },
+    { t: "Oh no, he's stuck! Push him!",      m: "uhoh",     fx: null     },
+    { t: "Yeah! You did it!",                 m: "delight",  fx: null     },
+    { t: "What's behind you?",                m: "curious",  fx: null     },
+    { t: "Here comes the big one!",           m: "excited",  fx: "vroom"  },
+    { t: "Wheee! Up and over!",               m: "delight",  fx: "whoosh" },
+    { t: "That's a good one. That's a REALLY good one.", m: "soft", fx: null },
+    { t: "Ready? Three, two, one, GO!",       m: "excited",  fx: null     }
+  ];
+  var BACKCHANNEL = ["mm!", "ooh", "yeah", "whoa"];
+
+  var MOODS = {
+    excited: { lite: "#FF8F5E", deep: "#E8531B", ear: "#C93F12", mouth: 20 },
+    curious: { lite: "#FF9E6B", deep: "#EE6524", ear: "#CC4A16", mouth: 9  },
+    uhoh:    { lite: "#FF7F55", deep: "#D93E12", ear: "#B22F0B", mouth: 17 },
+    delight: { lite: "#FFA070", deep: "#F2661B", ear: "#D14E10", mouth: 22 },
+    sleepy:  { lite: "#E08A66", deep: "#B44A20", ear: "#93381A", mouth: 6  },
+    soft:    { lite: "#FF9B7A", deep: "#E06A3F", ear: "#BC4E28", mouth: 8  }
+  };
+
+  /* -------------------------------------------------------------- state */
+  var S = {
+    running: false, listening: false, speaking: false,
+    turns: 0, frames: 0, startedAt: 0, openMs: 0, lastOpen: 0,
+    lastLine: -1, lastBackchannel: 0
+  };
+
+  var audioCtx = null, analyser = null, buf = null, fxGain = null;
+  var micStream = null, camStream = null, videoEl = null, rafId = null;
+  var noiseFloor = 0.012, THRESH_MULT = 2.6, MIN_THRESH = 0.016;
+  var aboveSince = 0, belowSince = 0;
+  var ONSET_MS = 40, RELEASE_MS = 650;
+
+  /* -------------------------------------------------------------- sound */
+  function ensureCtx() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+      fxGain = audioCtx.createGain();
+      fxGain.gain.value = 1;
+      fxGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === "suspended") { audioCtx.resume(); }
+    return audioCtx;
+  }
+
+  // Local sound bank, synthesised — no assets, no network, no latency.
+  function fx(kind) {
+    if (!audioCtx) { return; }
+    var t = audioCtx.currentTime;
+    var o = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    o.connect(g); g.connect(fxGain);
+
+    if (kind === "vroom") {
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(70, t);
+      o.frequency.exponentialRampToValueAtTime(180, t + 0.28);
+      o.frequency.exponentialRampToValueAtTime(90, t + 0.55);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.32, t + 0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      o.start(t); o.stop(t + 0.62);
+    } else if (kind === "crash") {
+      var n = audioCtx.createBufferSource();
+      var len = Math.floor(audioCtx.sampleRate * 0.4);
+      var b = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      var d = b.getChannelData(0);
+      for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+      n.buffer = b;
+      var ng = audioCtx.createGain();
+      ng.gain.setValueAtTime(0.4, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      n.connect(ng); ng.connect(fxGain);
+      n.start(t);
+      o.frequency.value = 1; g.gain.value = 0; o.start(t); o.stop(t + 0.01);
+    } else if (kind === "whoosh") {
+      o.type = "sine";
+      o.frequency.setValueAtTime(880, t);
+      o.frequency.exponentialRampToValueAtTime(180, t + 0.34);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+      o.start(t); o.stop(t + 0.38);
+    } else { // boing
+      o.type = "triangle";
+      o.frequency.setValueAtTime(200, t);
+      o.frequency.exponentialRampToValueAtTime(620, t + 0.1);
+      o.frequency.exponentialRampToValueAtTime(240, t + 0.3);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.26, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+      o.start(t); o.stop(t + 0.36);
+    }
+  }
+
+  /* -------------------------------------------------------------- voice */
+  var voice = null;
+  function pickVoice() {
+    var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+    if (!vs.length) { return; }
+    var want = ["samantha", "karen", "moira", "google uk english female",
+                "google us english", "zira", "female"];
+    for (var w = 0; w < want.length; w++) {
+      for (var i = 0; i < vs.length; i++) {
+        if (vs[i].name.toLowerCase().indexOf(want[w]) !== -1) { voice = vs[i]; return; }
+      }
+    }
+    for (var j = 0; j < vs.length; j++) {
+      if (vs[j].lang && vs[j].lang.indexOf("en") === 0) { voice = vs[j]; return; }
+    }
+    voice = vs[0];
+  }
+  if (window.speechSynthesis) {
+    pickVoice();
+    speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function say(text, opts) {
+    if (!window.speechSynthesis) { return; }
+    var u = new SpeechSynthesisUtterance(text);
+    if (voice) { u.voice = voice; }
+    u.pitch = (opts && opts.pitch) || 1.45;
+    u.rate  = (opts && opts.rate)  || 1.08;
+    u.volume = 1;
+    if (!opts || !opts.backchannel) {
+      S.speaking = true;
+      startMouth();
+      u.onend = u.onerror = function () { S.speaking = false; stopMouth(); };
+    }
+    // Deliberately NOT cancelling on child speech — "duck, don't stop" (§2.5).
+    speechSynthesis.speak(u);
+  }
+
+  /* --------------------------------------------------------------- face */
+  var mouthEl = $("mouth"), mouthTimer = null;
+
+  function setMouth(ry) {
+    mouthEl.setAttribute("ry", String(ry));
+  }
+
+  function startMouth() {
+    stopMouth();
+    mouthTimer = setInterval(function () {
+      setMouth(7 + Math.random() * 20);
+    }, 95);
+  }
+
+  function stopMouth() {
+    if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; }
+    var m = MOODS[currentMood] || MOODS.curious;
+    setMouth(m.mouth);
+  }
+
+  var currentMood = "curious";
+  function setMood(name) {
+    var m = MOODS[name];
+    if (!m) { return; }
+    currentMood = name;
+    $("bodyLite").setAttribute("stop-color", m.lite);
+    $("bodyDeep").setAttribute("stop-color", m.deep);
+    var ears = document.querySelectorAll("#earL .shell, #earR .shell");
+    for (var i = 0; i < ears.length; i++) { ears[i].setAttribute("fill", m.ear); }
+    if (!S.speaking) { setMouth(m.mouth); }
+  }
+
+  // irregular blink — layer 1
+  function scheduleBlink() {
+    var wait = 1900 + Math.random() * 4200;
+    setTimeout(function () {
+      if (S.running) {
+        var l = $("eyeL"), r = $("eyeR");
+        l.classList.add("blink"); r.classList.add("blink");
+        setTimeout(function () {
+          l.classList.remove("blink"); r.classList.remove("blink");
+        }, 170);
+        scheduleBlink();
+      }
+    }, wait);
+  }
+
+  // slow pupil wander, so he reads as looking around
+  function scheduleGaze() {
+    setTimeout(function () {
+      if (!S.running) { return; }
+      var dx = (Math.random() * 2 - 1) * 6, dy = (Math.random() * 2 - 1) * 4;
+      $("pupL").setAttribute("transform", "translate(" + dx + "," + dy + ")");
+      $("pupR").setAttribute("transform", "translate(" + dx + "," + dy + ")");
+      scheduleGaze();
+    }, 1400 + Math.random() * 2600);
+  }
+
+  /* ----------------------------------------------------------- the loop */
+  function onSpeechStart() {
+    S.listening = true;
+    S.lastOpen = performance.now();
+    playEl.classList.add("listening");
+    fxGain.gain.setTargetAtTime(0.6, audioCtx.currentTime, 0.05); // duck, don't stop
+    grabFrame();
+    // backchannel while they're still talking — no model call
+    var now = performance.now();
+    if (now - S.lastBackchannel > 4000 && Math.random() < 0.55) {
+      S.lastBackchannel = now;
+      say(BACKCHANNEL[Math.floor(Math.random() * BACKCHANNEL.length)],
+          { backchannel: true, pitch: 1.7, rate: 1.3 });
+    }
+  }
+
+  function onSpeechEnd() {
+    S.listening = false;
+    playEl.classList.remove("listening");
+    fxGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.12);
+    if (S.lastOpen) { S.openMs += performance.now() - S.lastOpen; S.lastOpen = 0; }
+    respond();
+  }
+
+  function respond() {
+    if (S.speaking) { return; }
+    var i = Math.floor(Math.random() * LINES.length);
+    if (i === S.lastLine) { i = (i + 1) % LINES.length; }
+    S.lastLine = i;
+    var line = LINES[i];
+    S.turns++;
+    setMood(line.m);
+    if (line.fx) { fx(line.fx); }
+    say(line.t);
+    $("said").textContent = "“" + line.t + "”";
+  }
+
+  function grabFrame() {
+    if (!videoEl || videoEl.readyState < 2) { return; }
+    var c = $("frame"), ctx = c.getContext("2d");
+    ctx.drawImage(videoEl, 0, 0, c.width, c.height);
+    S.frames++;
+  }
+
+  function tick() {
+    rafId = requestAnimationFrame(tick);
+    if (!analyser) { return; }
+
+    analyser.getFloatTimeDomainData(buf);
+    var sum = 0;
+    for (var i = 0; i < buf.length; i++) { sum += buf[i] * buf[i]; }
+    var rms = Math.sqrt(sum / buf.length);
+
+    // adaptive floor: creeps up fast in quiet, down slowly
+    if (!S.listening) {
+      noiseFloor = rms < noiseFloor ? noiseFloor * 0.96 + rms * 0.04
+                                    : noiseFloor * 0.998 + rms * 0.002;
+    }
+    var threshold = Math.max(MIN_THRESH, noiseFloor * THRESH_MULT);
+    var now = performance.now();
+
+    if (rms > threshold) {
+      belowSince = 0;
+      if (!aboveSince) { aboveSince = now; }
+      if (!S.listening && now - aboveSince > ONSET_MS) { onSpeechStart(); }
+    } else {
+      aboveSince = 0;
+      if (!belowSince) { belowSince = now; }
+      if (S.listening && now - belowSince > RELEASE_MS) { onSpeechEnd(); }
+    }
+
+    if (panelEl.classList.contains("on")) {
+      $("level").style.width = Math.min(100, rms * 420) + "%";
+      $("thresh").style.left = Math.min(100, threshold * 420) + "%";
+      $("sTurns").textContent = String(S.turns);
+      $("sFrames").textContent = String(S.frames);
+      var el = (now - S.startedAt) / 1000;
+      var mm = Math.floor(el / 60), ss = Math.floor(el % 60);
+      $("sClock").textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+      var open = S.openMs + (S.lastOpen ? now - S.lastOpen : 0);
+      $("sDuty").textContent = (el > 1 ? Math.round(open / (el * 10)) : 0) + "%";
+    }
+  }
+
+  /* --------------------------------------------------------------- boot */
+  var wakeLock = null;
+
+  function begin() {
+    var btn = $("go");
+    btn.disabled = true;
+    btn.textContent = "WAKING UP...";
+    $("err").textContent = "";
+    ensureCtx();
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      fail("This browser won't give a page microphone access. Try Safari on iPhone or Chrome on Android.");
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: { facingMode: "environment", width: { ideal: 640 } }
+    }).then(start).catch(function () {
+      // camera refused or absent — mic alone is enough to feel it
+      navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      }).then(start).catch(function (e2) {
+        fail("Couldn't get the microphone. " +
+             (e2 && e2.name === "NotAllowedError"
+               ? "Permission was declined — allow the mic and tap again."
+               : "Check that nothing else is using it."));
+      });
+    });
+  }
+
+  function fail(msg) {
+    $("err").textContent = msg;
+    var btn = $("go");
+    btn.disabled = false;
+    btn.textContent = "TRY AGAIN";
+  }
+
+  function start(stream) {
+    micStream = stream;
+    ensureCtx();
+
+    var src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.25;
+    buf = new Float32Array(analyser.fftSize);
+    src.connect(analyser);
+
+    if (stream.getVideoTracks().length) {
+      camStream = stream;
+      videoEl = document.createElement("video");
+      videoEl.setAttribute("playsinline", "");
+      videoEl.muted = true;
+      videoEl.srcObject = stream;
+      videoEl.play().catch(function () {});
+    }
+
+    startEl.style.display = "none";
+    playEl.classList.add("on");
+    S.running = true;
+    S.startedAt = performance.now();
+
+    setMood("curious");
+    scheduleBlink();
+    scheduleGaze();
+    tick();
+
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; })
+        .catch(function () {});
+    }
+
+    // one greeting so it's obvious he's awake
+    setTimeout(function () { setMood("delight"); fx("boing"); say("Hi! I'm Bo!"); }, 380);
+  }
+
+  function end() {
+    S.running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (window.speechSynthesis) { speechSynthesis.cancel(); }
+    stopMouth();
+    [micStream, camStream].forEach(function (s) {
+      if (s) { s.getTracks().forEach(function (t) { t.stop(); }); }
+    });
+    micStream = camStream = null;
+    analyser = null;
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+    panelEl.classList.remove("on");
+    playEl.classList.remove("on", "listening");
+    startEl.style.display = "flex";
+    var btn = $("go");
+    btn.disabled = false;
+    btn.textContent = "TAP TO WAKE BO";
+    S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0;
+  }
+
+  /* ------------------------------------------------------------ handlers */
+  $("go").addEventListener("click", begin);
+
+  var taps = [];
+  $("corner").addEventListener("click", function () {
+    var now = Date.now();
+    taps.push(now);
+    taps = taps.filter(function (t) { return now - t < 900; });
+    if (taps.length >= 3) { taps = []; panelEl.classList.add("on"); }
+  });
+
+  $("close").addEventListener("click", function () { panelEl.classList.remove("on"); });
+  $("end").addEventListener("click", end);
+
+  // a toddler will drag on this constantly — don't let the page move
+  document.addEventListener("touchmove", function (e) {
+    if (S.running && !panelEl.classList.contains("on")) { e.preventDefault(); }
+  }, { passive: false });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && window.speechSynthesis) { speechSynthesis.cancel(); }
+  });
+})();
+</script>
+
+</body>
+</html>
