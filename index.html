@@ -125,6 +125,30 @@
   #go:focus-visible { outline: 3px solid var(--cool); outline-offset: 4px; }
   #go[disabled] { opacity: 0.5; cursor: default; }
 
+  .secondary {
+    font-family: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    background: none;
+    border: 2px solid var(--ground-edge);
+    border-radius: 14px;
+    padding: 14px 16px;
+    cursor: pointer;
+    margin-top: -10px;
+  }
+  .secondary:active { background: var(--ground-lift); }
+  .secondary:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
+
+  .testout {
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin: -12px 0 0;
+    color: var(--cool);
+  }
+  .testout:empty { display: none; }
+  .testout.bad { color: var(--spark); }
+
   .perm {
     font-size: 13.5px;
     line-height: 1.5;
@@ -410,6 +434,17 @@
   .pbtn.primary { background: var(--spark); color: #2A1004; }
   .pbtn:focus-visible { outline: 3px solid var(--cool); outline-offset: 3px; }
 
+  .diag {
+    font-size: 12.5px;
+    line-height: 1.7;
+    background: var(--ground-lift);
+    border-radius: 11px;
+    padding: 12px 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .diag b { color: var(--cool); font-weight: 800; }
+  .diag b.bad { color: var(--spark); }
+
   .hint { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin: 0; }
 </style>
 
@@ -427,6 +462,9 @@
     </p>
 
     <button id="go">TAP TO WAKE BO</button>
+
+    <button id="test" class="secondary">Test sound first</button>
+    <p class="testout" id="testout"></p>
 
     <p class="perm">
       Asks for the mic, and the camera if it can get it. Bo still works
@@ -541,6 +579,9 @@
   </div>
 
   <div id="said">&mdash;</div>
+
+  <div class="diag" id="diag"></div>
+  <button class="pbtn" id="ptest">TEST SOUND</button>
 
   <p class="hint">
     Mic-open % is the cost driver from the model — the baseline assumed 35%.
@@ -671,6 +712,10 @@
   }
 
   /* -------------------------------------------------------------- voice */
+  // "unknown" until we have seen an utterance actually start. iOS Safari and
+  // cross-origin iframes both refuse speech silently, so we probe rather than
+  // assume, and fall back to the synthesised sound bank when it is refused.
+  var speechState = "unknown";
   var voice = null;
   function pickVoice() {
     var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
@@ -692,8 +737,47 @@
     speechSynthesis.onvoiceschanged = pickVoice;
   }
 
+  // Must be called synchronously from a real tap or iOS ignores everything after.
+  function unlockAudio(greet) {
+    try {
+      var b = audioCtx.createBuffer(1, 1, 22050);
+      var src = audioCtx.createBufferSource();
+      src.buffer = b;
+      src.connect(audioCtx.destination);
+      src.start(0);
+    } catch (e) {}
+
+    if (!window.speechSynthesis) { speechState = "absent"; return; }
+    try {
+      var u = new SpeechSynthesisUtterance(greet);
+      if (voice) { u.voice = voice; }
+      u.pitch = 1.45; u.rate = 1.05; u.volume = 1;
+      u.onstart = function () { speechState = "ok"; };
+      u.onerror = function () { speechState = "blocked"; };
+      speechSynthesis.speak(u);
+      setTimeout(function () {
+        if (speechState === "unknown") { speechState = "blocked"; }
+      }, 2000);
+    } catch (e) { speechState = "blocked"; }
+  }
+
+  function speechUsable() {
+    return !!window.speechSynthesis &&
+           speechState !== "absent" && speechState !== "blocked";
+  }
+
   function say(text, opts) {
-    if (!window.speechSynthesis) { return; }
+    // No voice available? Still move the mouth for a plausible beat, and let
+    // the sound bank carry the moment - a 2yo responds to sound over sentences.
+    if (!speechUsable()) {
+      if (!opts || !opts.backchannel) {
+        S.speaking = true;
+        startMouth();
+        setTimeout(function () { S.speaking = false; stopMouth(); },
+                   400 + text.length * 45);
+      }
+      return;
+    }
     var u = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; }
     u.pitch = (opts && opts.pitch) || 1.45;
@@ -798,7 +882,11 @@
     var line = LINES[i];
     S.turns++;
     setMood(line.m);
-    if (line.fx) { fx(line.fx); }
+    var sound = line.fx;
+    if (!sound && (!speechUsable() || Math.random() < 0.45)) {
+      sound = ["vroom", "whoosh", "boing"][Math.floor(Math.random() * 3)];
+    }
+    if (sound) { fx(sound); }
     say(line.t);
     $("said").textContent = "“" + line.t + "”";
   }
@@ -847,6 +935,7 @@
       $("sClock").textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
       var open = S.openMs + (S.lastOpen ? now - S.lastOpen : 0);
       $("sDuty").textContent = (el > 1 ? Math.round(open / (el * 10)) : 0) + "%";
+      $("diag").innerHTML = diagText();
     }
   }
 
@@ -859,6 +948,7 @@
     btn.textContent = "WAKING UP...";
     $("err").textContent = "";
     ensureCtx();
+    unlockAudio("Hi! I'm Bo!");   // synchronous - this is the gesture
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       fail("This browser won't give a page microphone access. Try Safari on iPhone or Chrome on Android.");
@@ -923,8 +1013,9 @@
         .catch(function () {});
     }
 
-    // one greeting so it's obvious he's awake
-    setTimeout(function () { setMood("delight"); fx("boing"); say("Hi! I'm Bo!"); }, 380);
+    // the greeting already fired inside the tap; just land the pose and a noise
+    setMood("delight");
+    setTimeout(function () { fx("boing"); }, 260);
   }
 
   function end() {
@@ -947,8 +1038,40 @@
     S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0;
   }
 
+  /* --------------------------------------------------------- diagnostics */
+  function diagText() {
+    var voices = window.speechSynthesis ? speechSynthesis.getVoices().length : 0;
+    var st = { ok: "working", blocked: "BLOCKED by the browser",
+               absent: "not supported here", unknown: "not tried yet" }[speechState];
+    var bad = (speechState === "blocked" || speechState === "absent");
+    return "Voice: <b class='" + (bad ? "bad" : "") + "'>" + st + "</b><br>" +
+           "Voices installed: <b>" + voices + "</b><br>" +
+           "Sound effects: <b>" + (audioCtx ? audioCtx.state : "not started") + "</b><br>" +
+           "Camera frame: <b>" + (videoEl ? "yes" : "no") + "</b>";
+  }
+
+  function runTest(outEl) {
+    ensureCtx();
+    unlockAudio("Test. One two three.");
+    fx("vroom");
+    setTimeout(function () {
+      if (!outEl) { return; }
+      if (speechState === "ok") {
+        outEl.className = "testout";
+        outEl.textContent = "Both working — you should have heard an engine and a voice.";
+      } else {
+        outEl.className = "testout bad";
+        outEl.textContent = "Engine noise should have played, but this browser blocked " +
+          "the voice. Bo still works — he'll use sounds instead of words. " +
+          "Opening the GitHub Pages link in Safari usually fixes it.";
+      }
+    }, 2200);
+  }
+
   /* ------------------------------------------------------------ handlers */
   $("go").addEventListener("click", begin);
+  $("test").addEventListener("click", function () { runTest($("testout")); });
+  $("ptest").addEventListener("click", function () { runTest(null); });
 
   var taps = [];
   $("corner").addEventListener("click", function () {
