@@ -197,6 +197,8 @@
 
   label { font-size: 13px; font-weight: 800; color: var(--ink); display: block; margin-bottom: 5px; }
 
+  input[type=range] { width: 100%; accent-color: var(--cool); height: 34px; }
+
   input[type=text], input[type=password], select, textarea {
     width: 100%;
     font-family: var(--text);
@@ -352,15 +354,24 @@
     <div>
       <label for="model">Model</label>
       <select id="model">
+        <option value="claude-opus-5">Claude Opus 5 — best</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — middle</option>
         <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest, cheapest</option>
-        <option value="claude-sonnet-5">Claude Sonnet 5 — smarter, slower</option>
-        <option value="claude-opus-5">Claude Opus 5 — best, slowest</option>
       </select>
     </div>
     <div>
       <label for="voice">Voice</label>
       <select id="voice"></select>
     </div>
+    <div>
+      <label for="wait">Wait for a pause before answering — <span id="waitv"></span></label>
+      <input type="range" id="wait" min="500" max="3000" step="100">
+    </div>
+    <p class="note">
+      How much silence Bo needs before he answers. Longer means he lets a
+      sentence finish; shorter means he jumps in. Two-year-olds pause a lot
+      mid-thought, so err long.
+    </p>
     <div>
       <label for="child">Child's name</label>
       <input type="text" id="child" placeholder="Hawk" autocapitalize="words">
@@ -369,6 +380,14 @@
       <label for="lex">What Bo knows (the lexicon)</label>
       <textarea id="lex" placeholder="gore = El Toro Loco&#10;great zombie = Grave Digger&#10;Kali = neighbour who visits&#10;loves: Monster Jam, trucks"></textarea>
     </div>
+    <p class="warn" id="voicetip">
+      The stock phone voices sound like a computer because they are the compact
+      ones. On iPhone: <b>Settings &rarr; Accessibility &rarr; Spoken Content
+      &rarr; Voices &rarr; English</b>, download a <b>Premium</b> voice, then
+      reopen this page and pick the &#9733; entry above. It is a large download
+      and it is the single biggest improvement available without a paid
+      text-to-speech service.
+    </p>
     <p class="note">
       One per line. Goes into Bo's prompt every session. This is the thing that
       turns "it's a gore" plus a photo of a red truck into <b>El Toro Loco</b>.
@@ -440,7 +459,8 @@
   var CFG = {
     key:   baked || localStorage.getItem("bo.key") || "",
     voice: localStorage.getItem("bo.voice") || "",
-    model: localStorage.getItem("bo.model") || "claude-haiku-4-5",
+    wait:  parseInt(localStorage.getItem("bo.wait"), 10) || 1200,
+    model: localStorage.getItem("bo.model") || "claude-opus-5",
     brain: "canned",   // set just below, once we know about the baked key
     child: localStorage.getItem("bo.child") || "Hawk",
     lex:   localStorage.getItem("bo.lex")   || ""
@@ -503,7 +523,7 @@
   var audioCtx = null, analyser = null, buf = null, fxGain = null;
   var micStream = null, videoEl = null, rafId = null;
   var noiseFloor = 0.012, THRESH_MULT = 2.6, MIN_THRESH = 0.016;
-  var aboveSince = 0, belowSince = 0, ONSET_MS = 40, RELEASE_MS = 420;
+  var aboveSince = 0, belowSince = 0, ONSET_MS = 40;
 
   /* -------------------------------------------------------------- sound */
   function ensureCtx() {
@@ -579,7 +599,10 @@
         if (vs[s0].name === CFG.voice) { voice = vs[s0]; paintVoices(); return; }
       }
     }
-    var want = ["buttery", "samantha", "ava", "allison", "susan",
+    // Enhanced/Premium/Neural voices sound dramatically less synthetic than
+    // the compact defaults, so reach for those first when one is installed.
+    var want = ["premium", "enhanced", "neural", "natural",
+                "ava", "allison", "samantha", "joelle", "nicky",
                 "google us english", "zira"];
     for (var w = 0; w < want.length; w++) {
       for (var i = 0; i < vs.length; i++) {
@@ -610,7 +633,10 @@
     vs.forEach(function (v) {
       var o = document.createElement("option");
       o.value = v.name;
-      o.textContent = v.name + (v.lang ? "  (" + v.lang + ")" : "");
+      var n = v.name.toLowerCase();
+      var good = /premium|enhanced|neural|natural/.test(n);
+      o.textContent = (good ? "\u2605 " : "") + v.name +
+                      (v.lang ? "  (" + v.lang + ")" : "");
       sel.appendChild(o);
     });
     if (voice) { sel.value = voice.name; }
@@ -628,7 +654,7 @@
     try {
       var u = new SpeechSynthesisUtterance(greet);
       if (voice) { u.voice = voice; }
-      u.pitch = 1.25; u.rate = 1.0;
+      u.pitch = 1.05; u.rate = 1.0;
       u.onstart = function () { speechState = "ok"; };
       u.onerror = function () { speechState = "blocked"; };
       speechSynthesis.speak(u);
@@ -652,7 +678,7 @@
     }
     var u = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; }
-    u.pitch = (opts && opts.pitch) || 1.25;
+    u.pitch = (opts && opts.pitch) || 1.05;
     u.rate  = (opts && opts.rate)  || 1.0;
     u.volume = 1;
     if (!opts || !opts.backchannel) {
@@ -1081,7 +1107,8 @@
 
   /* -------- speech recognition: only used to feed Claude some words ----- */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  var rec = null, recWanted = false, interim = "", interimTimer = null, lastSent = "";
+  var rec = null, recWanted = false, interim = "", interimTimer = null,
+      lastSent = "", finalWords = "";
 
   // One utterance must not be sent twice - once from a settled interim and
   // again when the recognizer finalises the same words.
@@ -1117,17 +1144,12 @@
             // Confidence gate (brief 5.1): drop low-scoring audio as noise.
             if (typeof alt.confidence === "number" && alt.confidence > 0 &&
                 alt.confidence < 0.25) { interim = ""; continue; }
-            if (t.length >= 2) { dispatch(t); }
+            if (t.length >= 2) { finalWords = (finalWords + " " + t).trim(); }
             interim = "";
           } else if (t.length >= 3) {
-            // Don't wait for the recognizer to decide it's finished - that
-            // alone costs several hundred ms. Fire on a settled interim.
+            // Hold it. Answering on a settled interim cuts the child off
+            // mid-sentence; a two-year-old needs the pause to finish a thought.
             interim = t;
-            if (interimTimer) { clearTimeout(interimTimer); }
-            interimTimer = setTimeout(function () {
-              interimTimer = null;
-              if (interim && !S.speaking) { dispatch(interim); interim = ""; }
-            }, 320);
           }
         }
       };
@@ -1143,7 +1165,7 @@
   function stopRecog() {
     recWanted = false;
     if (interimTimer) { clearTimeout(interimTimer); interimTimer = null; }
-    interim = ""; lastSent = "";
+    interim = ""; lastSent = ""; finalWords = "";
     if (rec) { try { rec.stop(); } catch (e) {} rec = null; }
     sttState = "off";
   }
@@ -1160,7 +1182,7 @@
     if (now - S.lastBackchannel > 4000 && Math.random() < 0.55) {
       S.lastBackchannel = now;
       say(BACKCHANNEL[Math.floor(Math.random() * BACKCHANNEL.length)],
-          { backchannel: true, pitch: 1.7, rate: 1.3 });
+          { backchannel: true, pitch: 1.3, rate: 1.15 });
     }
   }
 
@@ -1175,13 +1197,17 @@
       // Give recognition a short window. If it produces nothing - which is the
       // normal case on browsers with poor speech support - still ask Claude,
       // using the frame alone. Reacting to what he can see beats a canned line.
+      // Bo has already waited out CFG.wait ms of silence to get here. Give the
+      // recogniser a short grace period to deliver a final result, then answer
+      // with whatever words exist - or with the picture alone.
       if (pendingTimer) { clearTimeout(pendingTimer); }
       pendingTimer = setTimeout(function () {
         pendingTimer = null;
         if (S.thinking || S.speaking) { return; }
-        var words = (interim || "").trim();
+        var words = (finalWords || interim || "").trim();
+        finalWords = ""; interim = "";
         askClaude(words.length >= 2 ? words : NO_WORDS);
-      }, 1100);
+      }, 260);
       return;
     }
     fallbackLine();
@@ -1225,7 +1251,7 @@
     } else {
       aboveSince = 0;
       if (!belowSince) { belowSince = now; }
-      if (S.listening && now - belowSince > RELEASE_MS) { onSpeechEnd(); }
+      if (S.listening && now - belowSince > CFG.wait) { onSpeechEnd(); }
     }
 
     if (panelEl.classList.contains("on")) {
@@ -1517,6 +1543,14 @@
   g.addEventListener("mousedown", holdStart);
   g.addEventListener("mouseup", holdEnd);
   g.addEventListener("mouseleave", holdEnd);
+
+  var waitEl = $("wait");
+  waitEl.value = CFG.wait;
+  $("waitv").textContent = (CFG.wait / 1000).toFixed(1) + "s";
+  waitEl.addEventListener("input", function () {
+    $("waitv").textContent = (this.value / 1000).toFixed(1) + "s";
+  });
+  waitEl.addEventListener("change", function () { save("wait", parseInt(this.value, 10)); });
 
   $("voice").addEventListener("change", function () {
     save("voice", this.value);
