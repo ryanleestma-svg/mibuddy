@@ -106,7 +106,6 @@
   .blink { animation: blink 160ms ease; }
   @keyframes blink { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.08); } }
 
-  #mouth { transform-origin: 200px 296px; transition: transform 90ms ease; }
   #lids  { opacity: 0; transition: opacity 260ms ease; }
   .eye   { opacity: 1; }
   .shell { transition: fill 400ms ease; }
@@ -341,7 +340,7 @@
           <path d="M220 220 Q250 244 280 220" fill="none" stroke="#5C1A05"
                 stroke-width="7" stroke-linecap="round"/>
         </g>
-        <ellipse id="mouth" cx="200" cy="296" rx="26" ry="8" fill="#5C1A05"/>
+        <path id="mouth" d="M170,296 Q200,309 230,296 Q200,317 170,296 Z" fill="#5C1A05"/>
       </g></g></g>
     </svg>
   </div>
@@ -381,10 +380,14 @@
     <div>
       <label for="model">Model</label>
       <select id="model">
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest, cheapest</option>
+        <option value="claude-sonnet-5">Claude Sonnet 5 — smarter, slower</option>
         <option value="claude-opus-5">Claude Opus 5 — best, slowest</option>
-        <option value="claude-sonnet-5">Claude Sonnet 5 — faster</option>
-        <option value="claude-haiku-4-5">Claude Haiku 4.5 — fastest, try this first</option>
       </select>
+    </div>
+    <div>
+      <label for="voice">Voice</label>
+      <select id="voice"></select>
     </div>
     <div>
       <label for="child">Child's name</label>
@@ -413,7 +416,12 @@
       <div class="stat"><span class="k">Turns</span><span class="v" id="sTurns">0</span></div>
       <div class="stat"><span class="k">Frames</span><span class="v" id="sFrames">0</span></div>
       <div class="stat"><span class="k">Mic open</span><span class="v" id="sDuty">0%</span></div>
+      <div class="stat"><span class="k">Spent</span><span class="v" id="sCost">$0.00</span></div>
+      <div class="stat"><span class="k">Per hour</span><span class="v" id="sRate">&mdash;</span></div>
     </div>
+    <p class="note" id="costNote">
+      Measured from the tokens each reply actually reports — not an estimate from the model.
+    </p>
     <div class="meter"><div id="level"></div><div id="thresh"></div></div>
     <p class="note">
       <b>Mic open %</b> is the cost driver the model had to guess at — it assumed 35%.
@@ -452,7 +460,8 @@
   /* ------------------------------------------------------------- config */
   var CFG = {
     key:   localStorage.getItem("bo.key")   || "",
-    model: localStorage.getItem("bo.model") || "claude-opus-5",
+    voice: localStorage.getItem("bo.voice") || "",
+    model: localStorage.getItem("bo.model") || "claude-haiku-4-5",
     brain: localStorage.getItem("bo.brain") === "claude" ? "claude" : "canned",
     child: localStorage.getItem("bo.child") || "Hawk",
     lex:   localStorage.getItem("bo.lex")   || ""
@@ -493,7 +502,7 @@
   var MOOD_NAMES = ["excited", "curious", "uhoh", "delight", "sleepy", "soft"];
 
   /* -------------------------------------------------------------- state */
-  var S = { running: false, listening: false, speaking: false, thinking: false,
+  var S = { running: false, armed: false, listening: false, speaking: false, thinking: false,
             turns: 0, frames: 0, startedAt: 0, openMs: 0, lastOpen: 0,
             lastLine: -1, lastBackchannel: 0, lastLatency: 0 };
 
@@ -564,20 +573,53 @@
   /* -------------------------------------------------------------- voice */
   var speechState = "unknown", voice = null;
 
+  function allVoices() {
+    return window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  }
+
   function pickVoice() {
-    var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+    var vs = allVoices();
     if (!vs.length) { return; }
-    var want = ["samantha", "karen", "moira", "google uk english female",
-                "google us english", "zira", "female"];
+    if (CFG.voice) {
+      for (var s0 = 0; s0 < vs.length; s0++) {
+        if (vs[s0].name === CFG.voice) { voice = vs[s0]; paintVoices(); return; }
+      }
+    }
+    var want = ["buttery", "samantha", "ava", "allison", "susan",
+                "google us english", "zira"];
     for (var w = 0; w < want.length; w++) {
       for (var i = 0; i < vs.length; i++) {
-        if (vs[i].name.toLowerCase().indexOf(want[w]) !== -1) { voice = vs[i]; return; }
+        var v = vs[i];
+        if (v.name.toLowerCase().indexOf(want[w]) !== -1 &&
+            (!v.lang || v.lang.indexOf("en") === 0)) { voice = v; paintVoices(); return; }
       }
     }
     for (var j = 0; j < vs.length; j++) {
-      if (vs[j].lang && vs[j].lang.indexOf("en") === 0) { voice = vs[j]; return; }
+      if (vs[j].lang && vs[j].lang.replace("_", "-").indexOf("en-US") === 0) {
+        voice = vs[j]; paintVoices(); return;
+      }
+    }
+    for (var k = 0; k < vs.length; k++) {
+      if (vs[k].lang && vs[k].lang.indexOf("en") === 0) { voice = vs[k]; paintVoices(); return; }
     }
     voice = vs[0];
+    paintVoices();
+  }
+
+  function paintVoices() {
+    var sel = $("voice");
+    if (!sel) { return; }
+    var vs = allVoices();
+    if (!vs.length) { sel.innerHTML = "<option>no voices installed</option>"; return; }
+    if (sel.options.length === vs.length && sel.value) { return; }
+    sel.innerHTML = "";
+    vs.forEach(function (v) {
+      var o = document.createElement("option");
+      o.value = v.name;
+      o.textContent = v.name + (v.lang ? "  (" + v.lang + ")" : "");
+      sel.appendChild(o);
+    });
+    if (voice) { sel.value = voice.name; }
   }
   if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
@@ -592,7 +634,7 @@
     try {
       var u = new SpeechSynthesisUtterance(greet);
       if (voice) { u.voice = voice; }
-      u.pitch = 1.45; u.rate = 1.05;
+      u.pitch = 1.25; u.rate = 1.0;
       u.onstart = function () { speechState = "ok"; };
       u.onerror = function () { speechState = "blocked"; };
       speechSynthesis.speak(u);
@@ -609,18 +651,19 @@
   function say(text, opts) {
     if (!speechUsable()) {
       if (!opts || !opts.backchannel) {
-        S.speaking = true; startMouth();
+        S.speaking = true; startMouth(text);
         setTimeout(function () { S.speaking = false; stopMouth(); }, 400 + text.length * 45);
       }
       return;
     }
     var u = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; }
-    u.pitch = (opts && opts.pitch) || 1.45;
-    u.rate  = (opts && opts.rate)  || 1.08;
+    u.pitch = (opts && opts.pitch) || 1.25;
+    u.rate  = (opts && opts.rate)  || 1.0;
     u.volume = 1;
     if (!opts || !opts.backchannel) {
-      S.speaking = true; startMouth();
+      S.speaking = true; startMouth(text);
+      u.onboundary = function (ev) { syncMouth(ev.charIndex || 0, text); };
       u.onend = u.onerror = function () { S.speaking = false; stopMouth(); };
     }
     // Deliberately never cancelled by child speech - duck, don't stop.
@@ -628,16 +671,99 @@
   }
 
   /* --------------------------------------------------------------- face */
-  var mouthEl = $("mouth"), mouthTimer = null, currentMood = "curious";
+  var mouthEl = $("mouth"), currentMood = "curious";
 
-  function setMouth(ry) { mouthEl.setAttribute("ry", String(ry)); }
-  function startMouth() {
-    stopMouth();
-    mouthTimer = setInterval(function () { setMouth(7 + Math.random() * 20); }, 95);
+  // The mouth is one path built from three numbers: half-width, how far the
+  // upper edge bows down, how far the lower edge bows down. Every shape is the
+  // same three numbers, so interpolating between them always stays valid.
+  function mouthPath(w, u, l) {
+    return "M" + (200 - w) + ",296 Q200," + (296 + u) + " " + (200 + w) +
+           ",296 Q200," + (296 + l) + " " + (200 - w) + ",296 Z";
   }
-  function stopMouth() {
-    if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; }
-    setMouth((MOODS[currentMood] || MOODS.curious).mouth);
+
+  // Resting shape is a closed smile - corners above the middle of the curve.
+  var REST = { w: 31, u: 12, l: 22 };
+
+  var VIS = {
+    AA: { w: 32, u: 0,  l: 40 },   // father, cat
+    E:  { w: 34, u: 5,  l: 27 },   // bed
+    I:  { w: 30, u: 7,  l: 22 },   // sit
+    O:  { w: 20, u: 2,  l: 37 },   // go
+    U:  { w: 16, u: 6,  l: 31 },   // boot, w
+    M:  { w: 28, u: 11, l: 16 },   // m b p - lips together
+    F:  { w: 28, u: 8,  l: 19 },   // f v
+    S:  { w: 29, u: 7,  l: 21 },   // s t d n k g
+    L:  { w: 26, u: 4,  l: 28 },   // l th
+    R:  { w: 22, u: 6,  l: 27 },   // r
+    REST: REST
+  };
+
+  var LETTER_VIS = {
+    a: "AA", e: "E", i: "I", o: "O", u: "U", y: "I",
+    m: "M", b: "M", p: "M",
+    f: "F", v: "F",
+    w: "U",
+    r: "R",
+    l: "L",
+    s: "S", z: "S", c: "S", j: "S", x: "S",
+    t: "S", d: "S", n: "S", k: "S", g: "S", h: "S", q: "S"
+  };
+
+  var mCur = { w: REST.w, u: REST.u, l: REST.l };
+  var mTgt = { w: REST.w, u: REST.u, l: REST.l };
+  var visemes = [], visIdx = 0, visTimer = null;
+
+  function setViseme(v) { mTgt = VIS[v] || REST; }
+
+  // Runs every frame; keeps the shape moving smoothly rather than snapping.
+  function stepMouth() {
+    var k = 0.32, changed = false;
+    ["w", "u", "l"].forEach(function (key) {
+      var d = mTgt[key] - mCur[key];
+      if (Math.abs(d) > 0.15) { mCur[key] += d * k; changed = true; }
+      else { mCur[key] = mTgt[key]; }
+    });
+    if (changed) { mouthEl.setAttribute("d", mouthPath(mCur.w, mCur.u, mCur.l)); }
+  }
+
+  // Turn the words into a viseme track. Doubled letters collapse, and a gap
+  // between words closes the mouth, which is what makes it read as speech.
+  function buildVisemes(text) {
+    var out = [], prev = null;
+    var words = text.toLowerCase().split(/\s+/);
+    words.forEach(function (word, wi) {
+      for (var i = 0; i < word.length; i++) {
+        var v = LETTER_VIS[word[i]];
+        if (!v || v === prev) { continue; }
+        out.push(v); prev = v;
+      }
+      if (wi < words.length - 1) { out.push("REST"); prev = "REST"; }
+    });
+    return out.length ? out : ["AA"];
+  }
+
+  function startMouth(text) {
+    stopMouth(true);
+    visemes = buildVisemes(text || "aa");
+    visIdx = 0;
+    // ~11 visemes/sec reads as natural speech at rate 1.0
+    var step = Math.max(55, Math.min(120, 1000 / (11 * (CFG.rate || 1))));
+    visTimer = setInterval(function () {
+      if (visIdx >= visemes.length) { visIdx = 0; }
+      setViseme(visemes[visIdx++]);
+    }, step);
+  }
+
+  function stopMouth(quiet) {
+    if (visTimer) { clearInterval(visTimer); visTimer = null; }
+    if (!quiet) { setViseme("REST"); }
+  }
+
+  // Resync the track to where the voice actually is, when the browser tells us.
+  function syncMouth(charIndex, fullText) {
+    if (!visemes.length || !fullText) { return; }
+    var frac = charIndex / Math.max(1, fullText.length);
+    visIdx = Math.min(visemes.length - 1, Math.floor(frac * visemes.length));
   }
 
   function setMood(name) {
@@ -648,7 +774,6 @@
     $("bodyDeep").setAttribute("stop-color", m.deep);
     var ears = document.querySelectorAll("#earL .shell, #earR .shell");
     for (var i = 0; i < ears.length; i++) { ears[i].setAttribute("fill", m.ear); }
-    if (!S.speaking) { setMouth(m.mouth); }
   }
 
   function scheduleBlink() {
@@ -661,18 +786,89 @@
     }, 1900 + Math.random() * 4200);
   }
 
+  // Where Bo is looking, in viewBox units. Motion pulls it; it drifts back.
+  var gazeX = 0, gazeY = 0, gazeTX = 0, gazeTY = 0, lastMotion = 0;
+
+  function applyGaze() {
+    gazeX += (gazeTX - gazeX) * 0.12;
+    gazeY += (gazeTY - gazeY) * 0.12;
+    var t = "translate(" + gazeX.toFixed(2) + "," + gazeY.toFixed(2) + ")";
+    $("pupL").setAttribute("transform", t);
+    $("pupR").setAttribute("transform", t);
+  }
+
+  // Idle wander only while nothing is moving in frame.
   function scheduleGaze() {
     setTimeout(function () {
       if (!S.running) { return; }
-      var dx = (Math.random() * 2 - 1) * 6, dy = (Math.random() * 2 - 1) * 4;
-      $("pupL").setAttribute("transform", "translate(" + dx + "," + dy + ")");
-      $("pupR").setAttribute("transform", "translate(" + dx + "," + dy + ")");
+      if (performance.now() - lastMotion > 2500) {
+        gazeTX = (Math.random() * 2 - 1) * 6;
+        gazeTY = (Math.random() * 2 - 1) * 4;
+      }
       scheduleGaze();
     }, 1400 + Math.random() * 2600);
   }
 
+  /* ------------------------------------------------- motion from camera */
+  // Frame differencing, not object detection - the brief rules models out of
+  // v0, and this is arithmetic on a 32x24 thumbnail. Costs nothing.
+  var MW = 32, MH = 24, motionCan = null, motionCtx = null, prevPix = null;
+
+  function trackMotion() {
+    if (!videoEl || videoEl.readyState < 2) { return; }
+    if (!motionCan) {
+      motionCan = document.createElement("canvas");
+      motionCan.width = MW; motionCan.height = MH;
+      motionCtx = motionCan.getContext("2d", { willReadFrequently: true });
+    }
+    motionCtx.drawImage(videoEl, 0, 0, MW, MH);
+    var cur = motionCtx.getImageData(0, 0, MW, MH).data;
+    if (!prevPix) { prevPix = new Uint8ClampedArray(cur); return; }
+
+    var sx = 0, sy = 0, tot = 0, moved = 0;
+    for (var y = 0; y < MH; y++) {
+      for (var x = 0; x < MW; x++) {
+        var i = (y * MW + x) * 4;
+        var d = Math.abs(cur[i] - prevPix[i]) +
+                Math.abs(cur[i + 1] - prevPix[i + 1]) +
+                Math.abs(cur[i + 2] - prevPix[i + 2]);
+        if (d > 45) { sx += x * d; sy += y * d; tot += d; moved++; }
+      }
+    }
+    prevPix.set(cur);
+
+    var frac = moved / (MW * MH);
+    // Too little is noise; too much means the phone itself moved, not the toy.
+    if (tot === 0 || frac < 0.006 || frac > 0.55) { return; }
+
+    var cx = sx / tot, cy = sy / tot;
+    // Front camera: the child sees a mirrored view, so flip x to match.
+    var nx = 1 - (cx / (MW - 1)) * 2;
+    var ny = (cy / (MH - 1)) * 2 - 1;
+    gazeTX = Math.max(-9, Math.min(9, nx * 9));
+    gazeTY = Math.max(-6, Math.min(6, ny * 6));
+    lastMotion = performance.now();
+  }
+
   /* ------------------------------------------------------------- Claude */
   var history = [], sttState = "off", pendingTimer = null, lastHeard = "";
+
+  // $ per 1M tokens. Cache reads bill at a fraction of the input rate.
+  var PRICE = {
+    "claude-haiku-4-5": { in: 1,  out: 5  },
+    "claude-sonnet-5":  { in: 2,  out: 10 },
+    "claude-opus-5":    { in: 5,  out: 25 }
+  };
+  var spend = 0, calls = 0;
+
+  function addSpend(u) {
+    var pr = PRICE[CFG.model] || PRICE["claude-haiku-4-5"];
+    var inTok = (u.input_tokens || 0) +
+                (u.cache_creation_input_tokens || 0) * 1.25 +
+                (u.cache_read_input_tokens || 0) * 0.1;
+    spend += inTok / 1e6 * pr["in"] + (u.output_tokens || 0) / 1e6 * pr.out;
+    calls++;
+  }
 
   function systemPrompt() {
     var lex = CFG.lex.trim();
@@ -788,6 +984,7 @@
         fallbackLine();
         return;
       }
+      if (res.j.usage) { addSpend(res.j.usage); }
       var out = "";
       (res.j.content || []).forEach(function (b) { if (b.type === "text") { out += b.text; } });
       var parsed = parseReply(out);
@@ -868,6 +1065,7 @@
 
   /* ----------------------------------------------------------- the loop */
   function onSpeechStart() {
+    if (!S.running) { wakeUp(); }        // auto-wake on the first voice heard
     S.listening = true;
     S.lastOpen = performance.now();
     playEl.classList.add("listening");
@@ -886,7 +1084,7 @@
     playEl.classList.remove("listening");
     if (fxGain) { fxGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.12); }
     if (S.lastOpen) { S.openMs += performance.now() - S.lastOpen; S.lastOpen = 0; }
-    if (S.speaking || S.thinking) { return; }
+    if (S.speaking || S.thinking || !S.running) { return; }
 
     if (CFG.brain === "claude" && CFG.key) {
       // Give recognition a moment to deliver words; never let Bo stall waiting.
@@ -907,8 +1105,13 @@
     S.frames++;
   }
 
+  var motionAt = 0;
   function tick() {
     rafId = requestAnimationFrame(tick);
+    stepMouth();
+    applyGaze();
+    var nowT = performance.now();
+    if (nowT - motionAt > 110) { motionAt = nowT; trackMotion(); }
     if (!analyser) { return; }
     analyser.getFloatTimeDomainData(buf);
     var sum = 0;
@@ -942,6 +1145,15 @@
         (Math.floor(el % 60) < 10 ? "0" : "") + Math.floor(el % 60);
       var open = S.openMs + (S.lastOpen ? now - S.lastOpen : 0);
       $("sDuty").textContent = (el > 1 ? Math.round(open / (el * 10)) : 0) + "%";
+      $("sCost").textContent = "$" + spend.toFixed(3);
+      $("sRate").textContent = (el > 20 && spend > 0)
+        ? "$" + (spend / el * 3600).toFixed(2) : "\u2014";
+      $("costNote").innerHTML = calls
+        ? "Measured from the tokens each reply reported — <b>" + calls +
+          " calls</b>, " + CFG.model.replace("claude-", "") +
+          ". At this rate a 20-minute session costs <b>$" +
+          (el > 20 ? (spend / el * 1200).toFixed(3) : "—") + "</b>."
+        : "Measured from the tokens each reply actually reports — not an estimate.";
       $("diag").innerHTML = diagText();
     }
   }
@@ -974,27 +1186,56 @@
   /* ---------------------------------------------------------- wake / end */
   var wakeLock = null;
 
+  var AUDIO = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+  // Front camera: the child holds toys up to the screen, so that is the side
+  // that sees them - the day-one "Look. Look. Look." behaviour.
+  var VIDEO = { facingMode: "user", width: { ideal: 640 } };
+
+  function getMedia() {
+    return navigator.mediaDevices.getUserMedia({ audio: AUDIO, video: VIDEO })
+      .catch(function () { return navigator.mediaDevices.getUserMedia({ audio: AUDIO }); });
+  }
+
   function wake() {
-    if (S.running) { return; }
+    if (S.armed) { if (!S.running) { wakeUp(); } return; }
     ensureCtx();
     unlockAudio("Hi! I'm Bo!");          // synchronous: this IS the gesture
     $("wake").classList.remove("show");
-
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { return; }
-    navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: { facingMode: "environment", width: { ideal: 640 } }
-    }).then(live).catch(function () {
-      navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      }).then(live).catch(function () {
-        $("wake").textContent = "bo needs the microphone — tap again";
-        $("wake").classList.add("show");
-      });
+    getMedia().then(function (st) { arm(st); wakeUp(); }).catch(function () {
+      $("wake").textContent = "bo needs the microphone — tap again";
+      $("wake").classList.add("show");
     });
   }
 
-  function live(stream) {
+  // If the mic was already granted on a previous visit we can start listening
+  // without a tap, and let the first voice in the room wake him.
+  function tryAutoArm() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { return; }
+    var go = function () {
+      getMedia().then(function (st) {
+        ensureCtx();
+        var proceed = function () {
+          if (audioCtx.state !== "running") {
+            st.getTracks().forEach(function (t) { t.stop(); });
+            return;
+          }
+          arm(st);
+          $("wake").textContent = "say something to wake bo";
+          $("wake").classList.add("show");
+        };
+        audioCtx.resume().then(proceed, proceed);
+      }).catch(function () {});
+    };
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: "microphone" })
+        .then(function (r) { if (r.state === "granted") { go(); } })
+        .catch(go);
+    } else { go(); }
+  }
+
+  // Armed = mic open and the detector running. Bo may still be asleep.
+  function arm(stream) {
     micStream = stream;
     ensureCtx();
     var src = audioCtx.createMediaStreamSource(stream);
@@ -1012,14 +1253,22 @@
       videoEl.play().catch(function () {});
     }
 
-    playEl.classList.remove("asleep");
+    S.armed = true;
+    if (!S.startedAt) { S.startedAt = performance.now(); }
+    tick();
+  }
+
+  function wakeUp() {
+    if (S.running) { return; }
     S.running = true;
     S.startedAt = performance.now();
+    playEl.classList.remove("asleep");
+    $("wake").classList.remove("show");
     setMood("delight");
-    scheduleBlink(); scheduleGaze(); tick();
+    scheduleBlink(); scheduleGaze();
     setTimeout(function () { fx("boing"); }, 260);
+    if (speechState === "unknown" || speechState === "ok") { say("Hi! I'm Bo!"); }
     if (CFG.brain === "claude") { startRecog(); }
-
     if (navigator.wakeLock && navigator.wakeLock.request) {
       navigator.wakeLock.request("screen").then(function (w) { wakeLock = w; }).catch(function () {});
     }
@@ -1037,7 +1286,8 @@
     panelEl.classList.remove("on");
     playEl.classList.add("asleep");
     playEl.classList.remove("listening", "thinking");
-    S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0; S.lastLatency = 0;
+    S.armed = false; S.turns = S.frames = 0; S.openMs = 0; S.lastOpen = 0;
+    S.lastLatency = 0; spend = 0; calls = 0; prevPix = null;
     $("wake").textContent = "tap to wake bo";
     $("wake").classList.add("show");
   }
@@ -1103,6 +1353,14 @@
   g.addEventListener("mouseup", holdEnd);
   g.addEventListener("mouseleave", holdEnd);
 
+  $("voice").addEventListener("change", function () {
+    save("voice", this.value);
+    var vs = allVoices();
+    for (var i = 0; i < vs.length; i++) { if (vs[i].name === this.value) { voice = vs[i]; } }
+    ensureCtx(); unlockAudio("Hi! I'm Bo!");
+  });
+  paintVoices();
+
   $("close").addEventListener("click", function () { panelEl.classList.remove("on"); });
   $("end").addEventListener("click", end);
   $("ptest").addEventListener("click", runTest);
@@ -1115,6 +1373,7 @@
     if (document.hidden && window.speechSynthesis) { speechSynthesis.cancel(); }
   });
 
+  tryAutoArm();
   setTimeout(function () { if (!S.running) { $("wake").classList.add("show"); } }, 1500);
 })();
 </script>
